@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Trash2, Plus, Tag, ChevronDown } from 'lucide-react';
+import { Trash2, Plus, Tag, ChevronDown, Pencil, X } from 'lucide-react';
+import Loader from "@/components/ui/Loader";
 
 interface MenuItem {
   _id: string;
@@ -8,6 +9,7 @@ interface MenuItem {
   price: number;
   category: string;
   isAvailable: boolean;
+  image?: string;
 }
 
 export default function ManageMenuPage() {
@@ -19,6 +21,8 @@ export default function ManageMenuPage() {
     image: "",
   });
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchItems();
@@ -27,36 +31,83 @@ export default function ManageMenuPage() {
   const fetchItems = () => {
     fetch("/api/menu")
       .then((res) => res.json())
-      .then((data) => setItems(Array.isArray(data) ? data : []));
+      .then((data) => {
+          setItems(Array.isArray(data) ? data : []);
+          setInitialLoading(false);
+      });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    const res = await fetch("/api/menu", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const commonHeaders = { "Content-Type": "application/json" };
+    const body = JSON.stringify({
         name: formData.name,
         price: parseFloat(formData.price),
         category: formData.category,
         image: formData.image,
-      }),
     });
+
+    let res;
+    if (editingId) {
+        res = await fetch(`/api/menu/${editingId}`, {
+            method: "PUT",
+            headers: commonHeaders,
+            body: body
+        });
+    } else {
+        res = await fetch("/api/menu", {
+            method: "POST",
+            headers: commonHeaders,
+            body: body
+        });
+    }
 
     if (res.ok) {
       setFormData({ name: "", price: "", category: "Biryani", image: "" });
+      setEditingId(null);
       fetchItems(); 
     } else {
-      alert("Failed to add item");
+      alert(editingId ? "Failed to update item" : "Failed to add item");
     }
     setLoading(false);
   };
 
   const handleDelete = async (id: string) => {
-      // Logic for delete will go here
+      if (!confirm("Are you sure you want to delete this item?")) return;
+      
+      const res = await fetch(`/api/menu/${id}`, {
+          method: "DELETE"
+      });
+
+      if (res.ok) {
+          fetchItems();
+      } else {
+          alert("Failed to delete item");
+      }
   };
+
+  const handleEdit = (item: MenuItem) => {
+      setEditingId(item._id);
+      setFormData({
+          name: item.name,
+          price: item.price.toString(),
+          category: item.category,
+          image: item.image || ""
+      });
+      // Scroll to top to see form
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCancelEdit = () => {
+      setEditingId(null);
+      setFormData({ name: "", price: "", category: "Biryani", image: "" });
+  };
+
+  if (initialLoading) {
+      return <Loader fullScreen={false} className="h-screen" text="Loading menu items..." />;
+  }
 
   return (
     <div className="min-h-screen bg-white p-8 max-w-8xl mx-auto">
@@ -68,9 +119,18 @@ export default function ManageMenuPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-1">
                 <div className="bg-white p-6 rounded-2xl border border-gray-200 sticky top-6 shadow-sm">
-                    <h2 className="font-bold text-lg mb-6 text-gray-800 flex items-center gap-2">
-                        <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><Plus size={18} /></div>
-                        Add New Item
+                    <h2 className="font-bold text-lg mb-6 text-gray-800 flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                            <div className={`p-2 rounded-lg ${editingId ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'}`}>
+                                {editingId ? <Pencil size={18} /> : <Plus size={18} />}
+                            </div>
+                            {editingId ? "Update Item" : "Add New Item"}
+                        </div>
+                        {editingId && (
+                            <button onClick={handleCancelEdit} className="text-sm text-gray-400 hover:text-gray-600 flex items-center gap-1">
+                                <X size={14} /> Cancel
+                            </button>
+                        )}
                     </h2>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
@@ -86,7 +146,7 @@ export default function ManageMenuPage() {
                         </div>
                         
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Price ($)</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Price (Rs)</label>
                             <input 
                                 required
                                 type="number" 
@@ -121,8 +181,9 @@ export default function ManageMenuPage() {
                                 >
                                     <option value="Biryani">Biryani</option>
                                     <option value="Pulao">Pulao</option>
-                                    <option value="Curry">Curry</option>
-                                    <option value="Rice">Rice</option>
+                                    <option value="Palak">Palak</option>
+                                    <option value="Dal">Dal</option>
+                                    <option value="Dessert">Dessert</option>
                                     <option value="Sides">Sides</option>
                                     <option value="Drinks">Drinks</option>
                                 </select>
@@ -133,9 +194,9 @@ export default function ManageMenuPage() {
                         <button 
                             type="submit" 
                             disabled={loading}
-                            className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition active:scale-95 disabled:opacity-50 shadow-blue-200 shadow-lg mt-2"
+                            className={`w-full py-3 text-white rounded-xl font-bold hover:shadow-lg transition active:scale-95 disabled:opacity-50 shadow-md mt-2 ${editingId ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-200' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'}`}
                         >
-                            {loading ? "Adding..." : "Add Item"}
+                            {loading ? (editingId ? "Updating..." : "Adding...") : (editingId ? "Update Item" : "Add Item")}
                         </button>
                     </form>
                 </div>
@@ -150,21 +211,28 @@ export default function ManageMenuPage() {
                         {items.map((item) => (
                             <div key={item._id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition group">
                                 <div className="flex items-center gap-4">
-                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold ${
-                                        item.category === 'Main' ? 'bg-blue-50 text-blue-600' :
-                                        item.category === 'Starter' ? 'bg-orange-50 text-orange-600' :
-                                        item.category === 'Drink' ? 'bg-purple-50 text-purple-600' : 'bg-pink-50 text-pink-600'
+                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold shrink-0 overflow-hidden ${
+                                        item.category === 'Biryani' ? 'bg-orange-50 text-orange-600' :
+                                        item.category === 'Pulao' ? 'bg-yellow-50 text-yellow-600' :
+                                        item.category === 'Palak' ? 'bg-green-50 text-green-600' :
+                                        item.category === 'Dal' ? 'bg-amber-50 text-amber-600' : 
+                                        'bg-blue-50 text-blue-600'
                                     }`}>
-                                        {item.name[0]}
+                                        {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-cover" /> : item.name[0]}
                                     </div>
                                     <div>
                                         <h3 className="font-bold text-gray-900">{item.name}</h3>
-                                        <p className="text-sm text-gray-500 font-medium">{item.category} • ${item.price}</p>
+                                        <p className="text-sm text-gray-500 font-medium">{item.category} • Rs {item.price}</p>
                                     </div>
                                 </div>
-                                <button onClick={() => handleDelete(item._id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition">
-                                    <Trash2 size={18} />
-                                </button>
+                                <div className="flex gap-2">
+                                     <button onClick={() => handleEdit(item)} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Edit">
+                                        <Pencil size={18} />
+                                    </button>
+                                    <button onClick={() => handleDelete(item._id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
+                                        <Trash2 size={18} />
+                                    </button>
+                                </div>
                             </div>
                         ))}
                     </div>

@@ -9,10 +9,27 @@ export async function GET(req: Request) {
   try {
      const { searchParams } = new URL(req.url);
      const status = searchParams.get("status");
+     const startDate = searchParams.get("startDate");
+     const endDate = searchParams.get("endDate");
 
-     let query = {};
+     let query: any = {};
+     
+     // Status Filter
      if (status) {
-         query = { status };
+         query.status = status;
+     }
+
+     // Date Range Filter
+     if (startDate || endDate) {
+         query.createdAt = {};
+         if (startDate) {
+             query.createdAt.$gte = new Date(startDate);
+         }
+         if (endDate) {
+             const end = new Date(endDate);
+             end.setHours(23, 59, 59, 999);
+             query.createdAt.$lte = end;
+         }
      }
 
     const orders = await Order.find(query).sort({ createdAt: -1 });

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ChefHat } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Loader from "@/components/ui/Loader";
 
 export default function Home() {
   const [checking, setChecking] = useState(true);
@@ -17,7 +18,7 @@ export default function Home() {
       .then(user => {
           if (user) {
               if (user.role === 'manager') router.push('/create-order');
-              else if (user.role === 'owner') router.push('/login'); // Let owner choose at login screen (which now has selection)
+              else if (user.role === 'owner') router.push('/dashboard');
               else router.push('/dashboard');
           } else {
               setChecking(false);
@@ -27,16 +28,7 @@ export default function Home() {
   }, []);
 
   if (checking) {
-      return (
-          <div className="min-h-screen flex items-center justify-center bg-white">
-              <div className="animate-pulse flex flex-col items-center">
-                  <div className="bg-blue-600 p-4 rounded-2xl mb-4">
-                     <ChefHat size={32} className="text-white" />
-                  </div>
-                  <div className="h-4 w-32 bg-gray-200 rounded"></div>
-              </div>
-          </div>
-      );
+      return <Loader fullScreen text="Checking session..." />;
   }
 
   return (
@@ -87,11 +79,7 @@ export default function Home() {
                 </span>
            </div>
         </Link>
-      </div>
-
-      <div className="mt-16 text-sm text-gray-400 font-medium">
-        Powered by Next.js 15 & MongoDB
-      </div>
+      </div>  
     </div>
   );
 }
