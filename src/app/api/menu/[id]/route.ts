@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import MenuItem from "@/models/MenuItem";
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, props: { params: Promise<{ id: string }> }) {
   await connectDB();
   try {
+    const params = await props.params;
     const { id } = params;
     const body = await req.json();
     const updatedItem = await MenuItem.findByIdAndUpdate(id, body, { new: true });
@@ -19,9 +20,10 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, props: { params: Promise<{ id: string }> }) {
   await connectDB();
   try {
+    const params = await props.params;
     const { id } = params;
     const deletedItem = await MenuItem.findByIdAndDelete(id);
 
