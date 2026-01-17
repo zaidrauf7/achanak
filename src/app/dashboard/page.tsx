@@ -143,7 +143,7 @@ export default function Dashboard() {
             <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                 <h3 className="text-gray-500 text-[10px] md:text-sm font-semibold uppercase tracking-wider mb-1 md:mb-2">Total Revenue</h3>
                 <div className="flex items-baseline gap-2">
-                     <span className="text-2xl md:text-4xl font-bold text-gray-900">${stats.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                     <span className="text-2xl md:text-4xl font-bold text-gray-900">Rs {stats.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
                 </div>
                 <div className="mt-1 md:mt-2 text-[10px] md:text-xs text-gray-400">Total cash today</div>
             </div>
@@ -161,7 +161,7 @@ export default function Dashboard() {
                 <h3 className="text-gray-500 text-[10px] md:text-sm font-semibold uppercase tracking-wider mb-1 md:mb-2">Avg. Ticket</h3>
                 <div className="flex items-baseline gap-2">
                      <span className="text-2xl md:text-4xl font-bold text-gray-900">
-                         ${stats.totalOrders > 0 ? (stats.totalRevenue / stats.totalOrders).toFixed(0) : "0"}
+                         Rs {stats.totalOrders > 0 ? (stats.totalRevenue / stats.totalOrders).toFixed(0) : "0"}
                      </span>
                 </div>
                  <div className="mt-1 md:mt-2 text-[10px] md:text-xs text-gray-400">Avg spend/cust</div>
@@ -222,7 +222,7 @@ export default function Dashboard() {
                             </linearGradient>
                         </defs>
                         <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} dy={10}/>
-                        <YAxis axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} tickFormatter={(val) => `$${val}`}/>
+                        <YAxis axisLine={false} tickLine={false} tick={{fill: '#9ca3af', fontSize: 12}} tickFormatter={(val) => `Rs ${val}`}/>
                         <Tooltip contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}} />
                         <Area type="monotone" dataKey="sales" stroke="#2563eb" strokeWidth={3} fillOpacity={1} fill="url(#colorSales)" />
                     </AreaChart>
@@ -239,7 +239,7 @@ export default function Dashboard() {
                             {stats.topItems?.reduce((acc: number, item: any) => acc + item.totalQuantity, 0) || 0} Items
                         </p>
                         <p className="text-xs text-gray-400">
-                           ${stats.topItems?.reduce((acc: number, item: any) => acc + item.totalSales, 0).toLocaleString()}
+                           Rs {stats.topItems?.reduce((acc: number, item: any) => acc + item.totalSales, 0).toLocaleString()}
                         </p>
                     </div>
                 </div>
@@ -257,8 +257,8 @@ export default function Dashboard() {
                             <Bar dataKey="totalQuantity" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20} name="Quantity">
                                 <LabelList dataKey="totalQuantity" position="right" fill="#3b82f6" fontSize={12} formatter={(val: any) => `${val} sold`} />
                             </Bar>
-                            <Bar dataKey="totalSales" fill="#10b981" radius={[0, 4, 4, 0]} barSize={20} name="Sales ($)">
-                                <LabelList dataKey="totalSales" position="right" fill="#10b981" fontSize={12} formatter={(val: any) => `$${val}`} />
+                            <Bar dataKey="totalSales" fill="#10b981" radius={[0, 4, 4, 0]} barSize={20} name="Sales (Rs)">
+                                <LabelList dataKey="totalSales" position="right" fill="#10b981" fontSize={12} formatter={(val: any) => `Rs ${val}`} />
                             </Bar>
                         </BarChart>
                     </ResponsiveContainer>

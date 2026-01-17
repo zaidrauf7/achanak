@@ -219,7 +219,7 @@ export default function OrdersPage() {
                                             )}
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className="font-bold text-gray-900">${order.totalAmount.toFixed(2)}</span>
+                                            <span className="font-bold text-gray-900">Rs {order.totalAmount.toFixed(2)}</span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium uppercase tracking-wide ${
