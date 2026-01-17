@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { Trash2, Plus, Tag, ChevronDown } from 'lucide-react';
+import Loader from "@/components/ui/Loader";
 
 interface MenuItem {
   _id: string;
@@ -19,6 +20,7 @@ export default function ManageMenuPage() {
     image: "",
   });
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   useEffect(() => {
     fetchItems();
@@ -27,7 +29,10 @@ export default function ManageMenuPage() {
   const fetchItems = () => {
     fetch("/api/menu")
       .then((res) => res.json())
-      .then((data) => setItems(Array.isArray(data) ? data : []));
+      .then((data) => {
+          setItems(Array.isArray(data) ? data : []);
+          setInitialLoading(false);
+      });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,6 +62,10 @@ export default function ManageMenuPage() {
   const handleDelete = async (id: string) => {
       // Logic for delete will go here
   };
+
+  if (initialLoading) {
+      return <Loader fullScreen={false} className="h-screen" text="Loading menu items..." />;
+  }
 
   return (
     <div className="min-h-screen bg-white p-8 max-w-8xl mx-auto">

@@ -10,7 +10,10 @@ import {
   ChefHat,
   Menu,
   ClipboardList,
-  Map as MapIcon
+  Map as MapIcon,
+  Settings,
+  ChevronUp,
+  Users
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -23,9 +26,11 @@ export default function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
   const router = useRouter();
   const [user, setUser] = useState<any>(null); // Replace 'any' with a proper type if needed
   const [occupiedTableCount, setOccupiedTableCount] = useState(0);
+  const [showSettings, setShowSettings] = useState(false);
   
   useEffect(() => {
-      fetch('/api/auth/me')
+    // ... logic same ... 
+    fetch('/api/auth/me')
         .then(res => {
             if (res.ok) return res.json();
             return null;
@@ -64,7 +69,13 @@ export default function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
   };
 
   return (
-    <div className={`
+    <div 
+        onMouseEnter={() => setCollapsed(false)}
+        onMouseLeave={() => {
+            setCollapsed(true);
+            setShowSettings(false);
+        }}
+        className={`
         bg-white border-r border-gray-200 h-screen fixed left-0 top-0 flex flex-col shadow-sm z-50 transition-all duration-300 overflow-x-hidden
         ${collapsed ? '-translate-x-full md:translate-x-0 md:w-20' : 'translate-x-0 w-64'}
     `}>
@@ -157,23 +168,13 @@ export default function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
                     </div>
                 )}
                 </Link>
-
-                <Link href="/menu" className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all font-medium group relative ${isActive('/menu') ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'} ${collapsed ? 'justify-center' : ''}`}>
-                    <UtensilsCrossed size={20} className={isActive('/menu') ? 'text-blue-600' : 'text-gray-500'} />
-                    {!collapsed && <span>Manage Menu</span>}
-                    {collapsed && (
-                    <div className="absolute left-full ml-6 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-lg">
-                        Manage Menu
-                    </div>
-                )}
-                </Link>
             </>
         )}
 
       </nav>
 
       {/* Footer / User */}
-      <div className="p-3 border-t border-gray-100">
+      <div className="p-3 border-t border-gray-100 relative">
          {!collapsed ? (
              <div className="bg-gray-50 rounded-xl p-3 mb-3 flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm">
@@ -192,6 +193,51 @@ export default function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
              </div>
          )}
          
+        {/* Settings Dropdown for Owner & Manager */}
+        {(role === 'owner' || role === 'manager') && (
+            <div className={`mb-2 ${collapsed ? 'flex justify-center' : ''}`}>
+                 <button 
+                    onClick={() => setShowSettings(!showSettings)}
+                    className={`w-full flex items-center gap-2 text-gray-600 hover:bg-gray-50 p-2 rounded-lg transition-colors text-sm font-medium ${collapsed ? 'justify-center' : 'justify-between'}`}
+                 >
+                    <div className="flex items-center gap-2">
+                        <Settings size={16} />
+                        {!collapsed && "Settings"}
+                    </div>
+                    {!collapsed && <ChevronUp size={14} className={`transition-transform ${showSettings ? 'rotate-180' : ''}`} />}
+                 </button>
+                 
+                 {/* Dropdown Menu */}
+                 {showSettings && (
+                     <div className={`
+                        absolute bg-white border border-gray-200 shadow-xl rounded-xl p-1 z-50
+                        ${collapsed ? 'left-16 bottom-16 w-48' : 'left-3 bottom-[120px] w-[calc(100%-24px)]'}
+                     `}>
+                         {role === 'owner' && (
+                             <Link 
+                                href="/staff" 
+                                className={`flex items-center gap-2 p-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-colors ${isActive('/staff') ? 'bg-blue-50 text-blue-600' : ''}`}
+                                onClick={() => setShowSettings(false)}
+                             >
+                                 <Users size={16} />
+                                 <span>Manage Staff</span>
+                             </Link>
+                         )}
+                         {role === 'manager' && (
+                            <Link 
+                                href="/menu" 
+                                className={`flex items-center gap-2 p-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-colors ${isActive('/menu') ? 'bg-blue-50 text-blue-600' : ''}`}
+                                onClick={() => setShowSettings(false)}
+                            >
+                                <UtensilsCrossed size={16} />
+                                <span>Manage Menu</span>
+                            </Link>
+                         )}
+                     </div>
+                 )}
+            </div>
+        )}
+
         <button onClick={handleLogout} className={`w-full flex items-center gap-2 text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors text-sm font-medium ${collapsed ? 'justify-center' : 'justify-center'}`}>
             <LogOut size={16} />
             {!collapsed && "Sign Out"}

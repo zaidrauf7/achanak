@@ -6,6 +6,8 @@ const UserSchema = new Schema({
   name: { type: String },
   role: { type: String, enum: ["manager", "owner"], default: "manager" },
   createdAt: { type: Date, default: Date.now },
+  lastLogin: { type: Date },
+  lastLogout: { type: Date },
 });
 
 const User = models.User || model("User", UserSchema);

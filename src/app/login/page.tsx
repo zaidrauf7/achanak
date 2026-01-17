@@ -2,72 +2,47 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChefHat } from "lucide-react";
+import Loader from "@/components/ui/Loader";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [showRoleSelection, setShowRoleSelection] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    });
+    setIsLoading(true);
+    setError("");
 
-    if (res.ok) {
-        const data = await res.json();
-        
-        // If owner, let them choose. If manager, go straight to POS.
-        if (data.role === "owner") {
-            setShowRoleSelection(true);
-        } else {
-            router.push("/create-order");
-        }
-    } else {
-        setError("Invalid credentials");
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (res.ok) {
+          const data = await res.json();
+          
+          if (data.role === "owner") {
+              router.push("/dashboard");
+          } else {
+              router.push("/create-order");
+          }
+      } else {
+          setError("Invalid credentials");
+          setIsLoading(false);
+      }
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
+      setIsLoading(false);
     }
   };
 
-  const traverseTo = (path: string) => {
-      router.push(path);
-  };
-
-  if (showRoleSelection) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-            <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center">
-                <div className="flex justify-center mb-6">
-                    <div className="bg-blue-600 p-3 rounded-xl text-white">
-                        <ChefHat size={32} />
-                    </div>
-                </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back!</h2>
-                <p className="text-gray-500 mb-8">Where would you like to go?</p>
-                
-                <div className="space-y-4">
-                    <button 
-                        onClick={() => traverseTo('/dashboard')}
-                        className="w-full py-4 border-2 border-blue-600 bg-blue-50 text-blue-700 rounded-xl font-bold hover:bg-blue-100 transition-colors flex flex-col items-center"
-                    >
-                        <span className="text-lg">Owner Dashboard</span>
-                        <span className="text-xs font-normal opacity-75">View Sales & Analytics</span>
-                    </button>
-
-                    <button 
-                        onClick={() => traverseTo('/create-order')}
-                        className="w-full py-4 border-2 border-gray-200 text-gray-700 rounded-xl font-bold hover:border-gray-900 hover:text-gray-900 transition-all flex flex-col items-center"
-                    >
-                         <span className="text-lg">Manager POS</span>
-                         <span className="text-xs font-normal opacity-75">Create & Manage Orders</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-      );
+  if (isLoading) {
+      return <Loader fullScreen text="Signing in..." />;
   }
 
   return (
@@ -105,9 +80,10 @@ export default function LoginPage() {
           </div>
           <button
             type="submit"
-            className="w-full py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-colors"
+            disabled={isLoading}
+            className="w-full py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Sign In
+            {isLoading ? "Signing in..." : "Sign In"}
           </button>
         </form>
         <p className="mt-6 text-center text-sm text-gray-400">Default: manager / 123</p>

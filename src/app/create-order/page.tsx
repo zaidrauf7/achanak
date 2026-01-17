@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { Search } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Loader from "@/components/ui/Loader";
 
 interface MenuItem {
   _id: string;
@@ -194,6 +195,10 @@ const CreateOrderContent = () => {
       const matchesCategory = filter === "All" || item.category === filter;
       return matchesSearch && matchesCategory;
   });
+
+  if (loading) {
+      return <Loader fullScreen={false} className="h-screen" text="Loading menu..." />;
+  }
 
   return (
     <div className="h-screen bg-white p-6 font-sans flex flex-col overflow-hidden">
@@ -396,7 +401,7 @@ const CreateOrderContent = () => {
 
 export default function CreateOrderPage() {
     return (
-        <React.Suspense fallback={<div className="h-screen flex items-center justify-center text-gray-400">Loading...</div>}>
+        <React.Suspense fallback={<Loader fullScreen />}>
             <CreateOrderContent />
         </React.Suspense>
     );

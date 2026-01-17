@@ -23,6 +23,9 @@ export async function POST(req: Request) {
     }
 
     // Create Token
+    user.lastLogin = new Date();
+    await user.save();
+
     const token = jwt.sign(
       { userId: user._id, username: user.username, role: user.role, name: user.name },
       JWT_SECRET,

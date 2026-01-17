@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, LabelList } from 'recharts';
+import Loader from "@/components/ui/Loader";
 
 export default function Dashboard() {
   const [stats, setStats] = useState({ totalRevenue: 0, totalOrders: 0, topItems: [] });
@@ -27,32 +28,85 @@ export default function Dashboard() {
      { name: '8pm', orders: 6 },
   ];
 
+  const [user, setUser] = useState<any>(null);
+  const [activeManagers, setActiveManagers] = useState<any[]>([]);
+
+  const [chartData, setChartData] = useState<any[]>([]);
+
   useEffect(() => {
-    // Fetch Sales Stats
+    // 1. Fetch User & Setup
+    fetch('/api/auth/me')
+        .then(res => res.ok ? res.json() : null)
+        .then(userData => {
+            setUser(userData);
+            
+            // If Owner, fetch initially AND set up polling
+            if (userData && userData.role === 'owner') {
+                const fetchActiveManagers = () => {
+                    fetch('/api/users')
+                        .then(res => res.ok ? res.json() : [])
+                        .then(managers => {
+                            if (Array.isArray(managers)) {
+                                const active = managers.filter((m: any) => 
+                                    m.lastLogin && (!m.lastLogout || new Date(m.lastLogin) > new Date(m.lastLogout))
+                                );
+                                setActiveManagers(active);
+                            }
+                        });
+                };
+
+                fetchActiveManagers(); // Initial fetch
+                const interval = setInterval(fetchActiveManagers, 5000); // Poll every 5s
+                return () => clearInterval(interval);
+            }
+        });
+
+    // 2. Fetch Sales Stats
     fetch("/api/sales")
       .then((res) => res.json())
       .then((data) => {
         setStats(data);
         setLoading(false);
       });
-
-    // Fetch Table Stats
+      
+    // 3. Fetch Weekly History
+    fetch("/api/sales/history?range=7d")
+      .then(res => res.ok ? res.json() : [])
+      .then(data => {
+          if(Array.isArray(data) && data.length > 0) {
+              setChartData(data);
+          } else {
+              // Fallback simple mock if no data
+              const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+              const today = new Date().getDay();
+              const mock = [];
+              for(let i=6; i>=0; i--) {
+                  const d = new Date();
+                  d.setDate(d.getDate() - i);
+                  mock.push({ name: days[d.getDay()], sales: 0 });
+              }
+              setChartData(mock);
+          }
+      });
+    
+    // 4. Fetch Table Stats
     Promise.all([
         fetch('/api/settings').then(res => res.json()),
         fetch('/api/orders?status=pending').then(res => res.json())
     ]).then(([settings, orders]) => {
-        const total = settings.totalTables || 12;
-        let occupied = 0;
-        if (Array.isArray(orders)) {
-            const unique = new Set();
-            orders.forEach((o: any) => {
-                if (o.status === 'pending' && o.orderType === 'dine-in' && o.tableNo) {
-                    unique.add(o.tableNo);
-                }
-            });
-            occupied = unique.size;
-        }
-        setTableStats({ total, occupied });
+         // ... existing logic
+         const total = settings.totalTables || 12;
+         let occupied = 0;
+         if (Array.isArray(orders)) {
+             const unique = new Set();
+             orders.forEach((o: any) => {
+                 if (o.status === 'pending' && o.orderType === 'dine-in' && o.tableNo) {
+                     unique.add(o.tableNo);
+                 }
+             });
+             occupied = unique.size;
+         }
+         setTableStats({ total, occupied });
     });
   }, []);
 
@@ -61,64 +115,106 @@ export default function Dashboard() {
       weeklyData[6].sales = stats.totalRevenue;
   }
 
+  if (loading) {
+      return <Loader fullScreen={false} className="min-h-[80vh]" text="Loading dashboard data..." />;
+  }
+
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-        <header className="mb-10">
-            <h1 className="text-3xl font-bold text-gray-900">Today's Sales</h1>
-            <p className="text-gray-500 mt-1">Real-time overview for <span className="font-semibold text-blue-600">{new Date().toLocaleDateString()}</span></p>
+    <div className="p-4 md:p-8 max-w-7xl mx-auto">
+        <header className="mb-6 md:mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+                    {user ? `Welcome back, ${user.name}` : "Dashboard"}
+                </h1>
+                <p className="text-gray-500 mt-1 text-sm md:text-base">
+                    {user?.role === 'owner' ? 'Owner Overview' : 'Real-time overview'} for <span className="font-semibold text-blue-600">{new Date().toLocaleDateString()}</span>
+                </p>
+            </div>
+            {user?.role === 'owner' && (
+                <div className="bg-blue-50 text-blue-700 px-4 py-2 rounded-xl text-xs md:text-sm font-semibold flex items-center gap-2 w-fit">
+                    <span className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></span>
+                    Owner Access
+                </div>
+            )}
         </header>
         
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                <h3 className="text-gray-500 text-sm font-semibold uppercase tracking-wider mb-2">Total Revenue</h3>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
+            <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                <h3 className="text-gray-500 text-[10px] md:text-sm font-semibold uppercase tracking-wider mb-1 md:mb-2">Total Revenue</h3>
                 <div className="flex items-baseline gap-2">
-                     <span className="text-4xl font-bold text-gray-900">${stats.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                     <span className="text-2xl md:text-4xl font-bold text-gray-900">${stats.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
                 </div>
-                <div className="mt-2 text-xs text-gray-400">Total cash collected today</div>
+                <div className="mt-1 md:mt-2 text-[10px] md:text-xs text-gray-400">Total cash today</div>
             </div>
             
-             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                <h3 className="text-gray-500 text-sm font-semibold uppercase tracking-wider mb-2">Orders Served</h3>
+             <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                <h3 className="text-gray-500 text-[10px] md:text-sm font-semibold uppercase tracking-wider mb-1 md:mb-2">Orders Served</h3>
                 <div className="flex items-baseline gap-2">
-                     <span className="text-4xl font-bold text-gray-900">{stats.totalOrders}</span>
-                     <span className="text-sm font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Completed</span>
+                     <span className="text-2xl md:text-4xl font-bold text-gray-900">{stats.totalOrders}</span>
+                     <span className="hidden md:inline-block text-sm font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Completed</span>
                 </div>
-                 <div className="mt-2 text-xs text-gray-400">Total bills generated today</div>
+                 <div className="mt-1 md:mt-2 text-[10px] md:text-xs text-gray-400">Bills generated</div>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                <h3 className="text-gray-500 text-sm font-semibold uppercase tracking-wider mb-2">Avg. Ticket Size</h3>
+            <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                <h3 className="text-gray-500 text-[10px] md:text-sm font-semibold uppercase tracking-wider mb-1 md:mb-2">Avg. Ticket</h3>
                 <div className="flex items-baseline gap-2">
-                     <span className="text-4xl font-bold text-gray-900">
-                         ${stats.totalOrders > 0 ? (stats.totalRevenue / stats.totalOrders).toFixed(2) : "0.00"}
+                     <span className="text-2xl md:text-4xl font-bold text-gray-900">
+                         ${stats.totalOrders > 0 ? (stats.totalRevenue / stats.totalOrders).toFixed(0) : "0"}
                      </span>
                 </div>
-                 <div className="mt-2 text-xs text-gray-400">Average spend per customer</div>
+                 <div className="mt-1 md:mt-2 text-[10px] md:text-xs text-gray-400">Avg spend/cust</div>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow relative overflow-hidden">
-                <h3 className="text-gray-500 text-sm font-semibold uppercase tracking-wider mb-2">Table Status</h3>
+            {/* Table Status */}
+            <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow relative overflow-hidden">
+                <h3 className="text-gray-500 text-[10px] md:text-sm font-semibold uppercase tracking-wider mb-1 md:mb-2">Table Status</h3>
                 <div className="flex items-baseline gap-2">
-                     <span className="text-4xl font-bold text-red-600">{tableStats.occupied}</span>
-                     <span className="text-xl font-medium text-gray-400">/ {tableStats.total}</span>
+                     <span className="text-2xl md:text-4xl font-bold text-red-600">{tableStats.occupied}</span>
+                     <span className="text-lg md:text-xl font-medium text-gray-400">/ {tableStats.total}</span>
                 </div>
-                <div className="mt-2 text-xs text-gray-400 flex items-center gap-2">
+                <div className="mt-1 md:mt-2 text-[10px] md:text-xs text-gray-400 flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${tableStats.occupied > 0 ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`}></span>
-                    {tableStats.occupied > 0 ? 'Tables Occupied Now' : 'All Tables Available'}
+                    {tableStats.occupied > 0 ? 'Occupied' : 'All Free'}
                 </div>
                 {/* Decorative background circle */}
                 <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-red-50 rounded-full opacity-50"></div>
             </div>
+
+            {/* Active Managers - Owner Only */}
+            {user?.role === 'owner' && (
+                 <div className="col-span-2 lg:col-span-4 bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow relative overflow-hidden">
+                    <h3 className="text-gray-500 text-[10px] md:text-sm font-semibold uppercase tracking-wider mb-1 md:mb-2">Active Staff</h3>
+                    <div className="flex items-baseline gap-2">
+                        <span className="text-2xl md:text-4xl font-bold text-green-600">{activeManagers.length}</span>
+                        <span className="text-[10px] md:text-sm font-medium text-gray-400">Managers Online</span>
+                    </div>
+                    <div className="mt-1 md:mt-2 text-[10px] md:text-xs text-gray-400">
+                         {activeManagers.length > 0 ? (
+                             <div className="flex flex-col gap-1 mt-1">
+                                {activeManagers.map((m: any) => (
+                                    <div key={m._id} className="flex items-center justify-between bg-green-50 p-2 md:p-2 rounded-lg border border-green-100">
+                                         <span className="font-medium text-green-800 truncate">{m.name}</span>
+                                         <span className="text-[10px] text-green-600 whitespace-nowrap">
+                                             Since {new Date(m.lastLogin).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                         </span>
+                                    </div>
+                                ))}
+                             </div>
+                         ) : 'No managers currently active'}
+                    </div>
+                 </div>
+            )}
         </div>
 
         {/* Charts Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Revenue Chart */}
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-[400px]">
-                <h3 className="font-semibold text-lg text-gray-800 mb-6">Weekly Revenue Trend</h3>
+                <h3 className="font-semibold text-lg text-gray-800 mb-6">Values Trends</h3>
                 <ResponsiveContainer width="100%" height="85%">
-                    <AreaChart data={weeklyData}>
+                    <AreaChart data={chartData.length > 0 ? chartData : weeklyData}>
                         <defs>
                             <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#2563eb" stopOpacity={0.2}/>
