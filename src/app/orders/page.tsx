@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle, Clock, Edit2, Trash2 } from 'lucide-react';
+import { CheckCircle, Clock, Edit2, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import Loader from "@/components/ui/Loader";
 
 interface OrderItem {
@@ -24,25 +24,24 @@ export default function OrdersPage() {
     const [activeTab, setActiveTab] = useState<'active' | 'completed'>('active');
     const [dateRange, setDateRange] = useState({ start: '', end: '' });
     const [orders, setOrders] = useState<Order[]>([]);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
 
     useEffect(() => {
         fetchOrders();
-    }, [activeTab, dateRange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeTab, dateRange, currentPage]);
 
     const fetchOrders = () => {
         setLoading(true);
         let url = '/api/orders?';
         
         if (activeTab === 'active') {
-            // Fetching all for active to ensure we catch everything not completed/cancelled
-            // Optimally we'd filter on server, but for now we filter client side after fetching all
-            // Or better, let's just fetch pending and preparing if we update API. 
-            // Current API supports single status. Let's fetch ALL and filter since active lists are small.
              url = '/api/orders'; 
         } else {
-             url = '/api/orders?status=completed';
+             url = `/api/orders?status=completed&page=${currentPage}&limit=20`;
              if (dateRange.start) url += `&startDate=${dateRange.start}`;
              if (dateRange.end) url += `&endDate=${dateRange.end}`;
         }
@@ -50,23 +49,28 @@ export default function OrdersPage() {
         fetch(url, { cache: 'no-store' })
             .then(res => res.json())
             .then(data => {
-                if (Array.isArray(data)) {
-                    let filtered = data;
-                    if (activeTab === 'active') {
-                        filtered = data.filter(o => o.status === 'pending' || o.status === 'preparing');
-                        // Sort by Pending first, then time
-                        filtered.sort((a, b) => {
-                             if (a.status === 'pending' && b.status !== 'pending') return -1;
-                             if (a.status !== 'pending' && b.status === 'pending') return 1;
-                             return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(); // Oldest first for active (FIFO)
-                        });
-                    } else {
-                        // Completed orders: Newest first
-                         filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-                    }
+                let fetchedOrders = [];
+                if (data.pagination) {
+                    setTotalPages(data.pagination.pages);
+                    fetchedOrders = data.orders;
+                } else if (Array.isArray(data)) {
+                    fetchedOrders = data;
+                    setTotalPages(1);
+                } else {
+                    fetchedOrders = [];
+                }
+
+                if (activeTab === 'active') {
+                    // Client-side filtering/sorting for active orders
+                    let filtered = fetchedOrders.filter((o: any) => o.status === 'pending' || o.status === 'preparing');
+                    filtered.sort((a: any, b: any) => {
+                            if (a.status === 'pending' && b.status !== 'pending') return -1;
+                            if (a.status !== 'pending' && b.status === 'pending') return 1;
+                            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(); // Newest first
+                    });
                     setOrders(filtered);
                 } else {
-                    setOrders([]);
+                    setOrders(fetchedOrders);
                 }
                 setLoading(false);
             });
@@ -164,6 +168,7 @@ export default function OrdersPage() {
                     </p>
                 </div>
             ) : (
+                <>
                 <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
@@ -262,6 +267,30 @@ export default function OrdersPage() {
                         </table>
                     </div>
                 </div>
+
+                {/* Pagination Controls */}
+                {activeTab === 'completed' && totalPages > 1 && (
+                    <div className="flex justify-center items-center gap-4 mt-6">
+                        <button
+                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            disabled={currentPage === 1}
+                            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            <ChevronLeft size={16} /> Previous
+                        </button>
+                        <span className="text-sm font-medium text-gray-600">
+                            Page {currentPage} of {totalPages}
+                        </span>
+                        <button
+                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            disabled={currentPage === totalPages}
+                            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            Next <ChevronRight size={16} />
+                        </button>
+                    </div>
+                )}
+                </>
             )}
         </div>
     );

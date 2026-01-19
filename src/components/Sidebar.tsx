@@ -123,6 +123,16 @@ export default function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
         {/* Only Manager sees New Order & Menu */}
         {role !== 'owner' && (
             <>
+                <Link href="/create-order" className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all font-medium group relative ${isActive('/create-order') ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'} ${collapsed ? 'justify-center' : ''}`}>
+                <ShoppingCart size={20} className={isActive('/create-order') ? 'text-blue-600' : 'text-gray-500'} />
+                {!collapsed && <span>New Order</span>}
+                {collapsed && (
+                    <div className="absolute left-full ml-6 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-lg">
+                        New Order
+                    </div>
+                )}
+                </Link>
+
                 <Link href="/orders" className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all font-medium group relative ${isActive('/orders') ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'} ${collapsed ? 'justify-center' : ''}`}>
                     <ClipboardList size={20} className={isActive('/orders') ? 'text-blue-600' : 'text-gray-500'} />
                     {!collapsed && <span>Orders</span>}
@@ -157,16 +167,6 @@ export default function Sidebar({ collapsed, setCollapsed }: SidebarProps) {
                             Dine In {occupiedTableCount > 0 && `(${occupiedTableCount})`}
                         </div>
                     )}
-                </Link>
-
-                <Link href="/create-order" className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all font-medium group relative ${isActive('/create-order') ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'} ${collapsed ? 'justify-center' : ''}`}>
-                <ShoppingCart size={20} className={isActive('/create-order') ? 'text-blue-600' : 'text-gray-500'} />
-                {!collapsed && <span>New Order</span>}
-                {collapsed && (
-                    <div className="absolute left-full ml-6 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none shadow-lg">
-                        New Order
-                    </div>
-                )}
                 </Link>
             </>
         )}

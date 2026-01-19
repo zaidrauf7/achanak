@@ -12,6 +12,9 @@ export async function GET(req: Request) {
      const startDate = searchParams.get("startDate");
      const endDate = searchParams.get("endDate");
 
+     const page = searchParams.get("page");
+     const limit = searchParams.get("limit");
+
      let query: any = {};
      
      // Status Filter
@@ -32,8 +35,29 @@ export async function GET(req: Request) {
          }
      }
 
-    const orders = await Order.find(query).sort({ createdAt: -1 });
-    return NextResponse.json(orders);
+    if (page) {
+        const pageNum = parseInt(page) || 1;
+        const limitNum = parseInt(limit || '20');
+        const skip = (pageNum - 1) * limitNum;
+
+        const total = await Order.countDocuments(query);
+        const orders = await Order.find(query)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limitNum);
+
+        return NextResponse.json({
+            orders,
+            pagination: {
+                total,
+                page: pageNum,
+                pages: Math.ceil(total / limitNum)
+            }
+        });
+    } else {
+        const orders = await Order.find(query).sort({ createdAt: -1 });
+        return NextResponse.json(orders);
+    }
   } catch (error) {
     return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 });
   }
