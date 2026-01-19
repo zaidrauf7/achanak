@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { Calendar } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Cell, LabelList } from 'recharts';
 import Loader from "@/components/ui/Loader";
 
@@ -7,6 +8,11 @@ export default function Dashboard() {
   const [stats, setStats] = useState({ totalRevenue: 0, totalOrders: 0, topItems: [] });
   const [tableStats, setTableStats] = useState({ total: 0, occupied: 0 });
   const [loading, setLoading] = useState(true);
+
+  // Historical Data State (Owner only)
+  const [historyDate, setHistoryDate] = useState('');
+  const [historyStats, setHistoryStats] = useState<any>(null);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   // Still using mock data for the weekly/hourly charts for now as we don't have historical info in DB yet
   const weeklyData = [
@@ -110,6 +116,19 @@ export default function Dashboard() {
     });
   }, []);
 
+  // Fetch Historical stats when date changes
+  useEffect(() => {
+    if (historyDate && user?.role === 'owner') {
+        setLoadingHistory(true);
+        fetch(`/api/sales?date=${historyDate}`)
+            .then(res => res.json())
+            .then(data => {
+                setHistoryStats(data);
+                setLoadingHistory(false);
+            });
+    }
+  }, [historyDate, user]);
+
   // Sync the chart "Today" value with actual data
   if (stats.totalRevenue > 0) {
       weeklyData[6].sales = stats.totalRevenue;
@@ -207,6 +226,62 @@ export default function Dashboard() {
                  </div>
             )}
         </div>
+
+        {/* Sales History Filter - Owner Only */}
+        {user?.role === 'owner' && (
+            <div className="mb-8 bg-blue-50/50 p-6 rounded-2xl border border-blue-100 transition-all">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <div>
+                         <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                            <Calendar className="text-blue-600" size={20} />
+                            Sales History
+                        </h3>
+                        <p className="text-sm text-gray-500">Analyze performance for past dates</p>
+                    </div>
+                    <div>
+                        <input 
+                            type="date" 
+                            className="bg-white border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 shadow-sm"
+                            value={historyDate}
+                            onChange={(e) => setHistoryDate(e.target.value)}
+                            max={new Date().toISOString().split('T')[0]} 
+                        />
+                    </div>
+                </div>
+
+                {historyDate && (
+                    <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                        {loadingHistory ? (
+                             <div className="flex justify-center py-8">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                             </div>
+                        ) : historyStats ? (
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col items-center text-center">
+                                    <p className="text-xs text-gray-500 font-semibold uppercase mb-1">Historical Revenue</p>
+                                    <p className="text-2xl font-bold text-gray-900">Rs {historyStats.totalRevenue?.toLocaleString() || 0}</p>
+                                </div>
+                                <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col items-center text-center">
+                                    <p className="text-xs text-gray-500 font-semibold uppercase mb-1">Total Orders</p>
+                                    <p className="text-2xl font-bold text-gray-900">{historyStats.totalOrders || 0}</p>
+                                </div>
+                                <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col items-center text-center">
+                                    <p className="text-xs text-gray-500 font-semibold uppercase mb-1">Top Selling Item</p>
+                                    <p className="text-base font-bold text-gray-900 truncate max-w-full px-2" title={historyStats.topItems?.[0]?._id}>
+                                         {historyStats.topItems?.[0]?._id || "N/A"}
+                                    </p>
+                                    {historyStats.topItems?.[0] && (
+                                        <p className="text-xs text-gray-400 mt-1">{historyStats.topItems[0].totalQuantity} sold</p>
+                                    )}
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="text-center text-gray-500 italic py-4">No data available for this date</p>
+                        )}
+                    </div>
+                )}
+            </div>
+        )}
 
         {/* Charts Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

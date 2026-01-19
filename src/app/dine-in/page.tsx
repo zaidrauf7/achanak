@@ -169,7 +169,7 @@ export default function DineInPage() {
                                         <>
                                             <div className="text-sm font-bold text-gray-900">Occupied</div>
                                             <div className="text-xs text-red-500 font-medium mt-1">
-                                                ${order.totalAmount.toFixed(2)} • {order.items.length} items
+                                                Rs {order.totalAmount.toFixed(2)} • {order.items.length} items
                                             </div>
                                         </>
                                     ) : (
