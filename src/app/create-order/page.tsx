@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Search } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Loader from "@/components/ui/Loader";
+import Toast from "@/components/ui/Toast";
 
 interface MenuItem {
   _id: string;
@@ -29,6 +30,8 @@ const CreateOrderContent = () => {
   const [tableNo, setTableNo] = useState("");
   const [totalTables, setTotalTables] = useState(12);
   const [activeTables, setActiveTables] = useState<Record<string, string>>({}); // tableNo -> orderId
+  const [showTableError, setShowTableError] = useState(false);
+  const [toast, setToast] = useState<{message: string, type: 'success' | 'error'} | null>(null);
   const router = useRouter();
 
   const searchParams = useSearchParams();
@@ -116,11 +119,14 @@ const CreateOrderContent = () => {
   }
   
   const handleTableClick = (num: string) => {
+      setShowTableError(false);
       if (activeTables[num]) {
           // If table is occupied, go to edit that order
           if (activeTables[num] !== orderId) {
               if (confirm(`Table ${num} is occupied. Do you want to add items to the existing order?`)) {
                   router.push(`/create-order?edit=${activeTables[num]}`);
+              } else {
+                 setTableNo(""); // Canceled selection
               }
           }
       } else {
@@ -130,7 +136,7 @@ const CreateOrderContent = () => {
 
   const submitOrder = async (returnOrder = false) => {
      if (orderType === 'dine-in' && !tableNo) {
-         alert("Please select a table number for Dine In orders.");
+         setShowTableError(true);
          return null;
      }
 
@@ -177,14 +183,14 @@ const CreateOrderContent = () => {
          if (orderId) {
              router.push('/orders');
          } else {
-             alert("Order placed successfully!");
+             setToast({ message: "Order placed successfully!", type: "success" });
              setTableNo("");
              refreshActiveTables();
          }
          return data;
      } else {
          console.error("Order submission failed");
-         alert("Failed to submit order.");
+         setToast({ message: "Failed to submit order.", type: "error" });
          return null;
      }
   };
@@ -205,111 +211,6 @@ const CreateOrderContent = () => {
         });
   };
    
-  // ... inside return ...
-                   <div className="grid grid-cols-4 gap-3">
-                       <button 
-                        onClick={() => submitOrder(false)} 
-                        disabled={cart.length === 0}
-                        className="col-span-2 py-4 bg-black text-white rounded-xl font-bold hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gray-200"
-                       >
-                           {orderId ? "Update Order" : "Place Order"}
-                       </button>
-                       <button
-                           onClick={async () => {
-                               // Capture cart snapshot before submit clears it
-                               const cartSnapshot = [...cart];
-                               const total = cartSnapshot.reduce((acc, i) => acc + (i.price * i.quantity), 0).toFixed(2);
-                               const date = new Date().toLocaleString();
-                               
-                               // Open window first to avoid popup blocker logic
-                               const win = window.open('', '', 'width=400,height=600');
-                               if(win) win.document.write('<html><body><h3>Processing Order...</h3></body></html>');
-
-                               // Submit Order
-                               const savedOrder = await submitOrder(true);
-                               
-                               if (!savedOrder) {
-                                   win?.close();
-                                   return; 
-                               }
-                               
-                               const finalOrderId = savedOrder._id || orderId || 'New';
-
-                               const receiptHtml = `
-                                   <html>
-                                       <head>
-                                           <title>Print Receipt</title>
-                                           <style>
-                                               body { font-family: 'Courier New', monospace; text-align: center; max-width: 300px; margin: 0 auto; padding: 20px; }
-                                               .header { margin-bottom: 20px; border-bottom: 1px dashed #000; padding-bottom: 10px; }
-                                               .title { font-size: 20px; font-weight: bold; margin: 0; }
-                                               .subtitle { font-size: 12px; }
-                                               .meta { text-align: left; font-size: 12px; margin-bottom: 10px; }
-                                               .items { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 12px; }
-                                               .items th { border-bottom: 1px dashed #000; text-align: left; }
-                                               .items td { padding: 4px 0; }
-                                               .total { border-top: 1px dashed #000; padding-top: 10px; font-weight: bold; font-size: 16px; text-align: right; }
-                                               .footer { margin-top: 20px; font-size: 12px; }
-                                           </style>
-                                       </head>
-                                       <body>
-                                           <div class="header">
-                                               <h1 class="title">Achanak</h1>
-                                               <p class="subtitle">Authentic Flavors</p>
-                                           </div>
-                                           <div class="meta">
-                                               <div>Date: ${date}</div>
-                                               <div>Type: ${orderType === 'dine-in' ? 'Dine In' : 'Take Away'}</div>
-                                               ${orderType === 'dine-in' && tableNo ? `<div>Table: ${tableNo}</div>` : ''}
-                                               <div>Order #: ${finalOrderId.slice(-4)}</div>
-                                           </div>
-                                           <table class="items">
-                                               <thead>
-                                                   <tr>
-                                                       <th>Item</th>
-                                                       <th>Qty</th>
-                                                       <th style="text-align:right">Price</th>
-                                                   </tr>
-                                               </thead>
-                                               <tbody>
-                                                   ${cartSnapshot.map(item => `
-                                                       <tr>
-                                                           <td>${item.name}</td>
-                                                           <td>${item.quantity}</td>
-                                                           <td style="text-align:right">Rs ${(item.price * item.quantity).toFixed(2)}</td>
-                                                       </tr>
-                                                   `).join('')}
-                                               </tbody>
-                                           </table>
-                                           <div class="total">
-                                               Total: Rs ${total}
-                                           </div>
-                                           <div class="footer">
-                                               <p>Thank you for visiting!</p>
-                                           </div>
-                                           <script>
-                                               window.onload = function() { window.print(); window.close(); }
-                                           </script>
-                                       </body>
-                                   </html>
-                               `;
-                               if (win) {
-                                   win.document.body.innerHTML = ''; // Clear loading message
-                                   win.document.write(receiptHtml);
-                                   win.document.close();
-                               }
-                               
-                               if (orderId) {
-                                    router.push('/orders'); // Redirect if editing
-                               }
-                           }}
-                           disabled={cart.length === 0}
-                           className="col-span-2 py-4 bg-gray-100 text-gray-900 rounded-xl font-bold hover:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center justify-center gap-1 border border-gray-200"
-                       >
-                           <span className="text-xl">🖨️</span>
-                           <span className="text-[10px] uppercase tracking-wide">Place & Print</span>
-                       </button>
-                   </div>
 
   const categories = Array.from(new Set(["All", "Biryani", "Pulao", "Palak", "Dal", "Dessert", "Sides", "Drinks", ...menu.map(item => item.category)]));
   const filteredMenu = menu.filter((item) => {
@@ -323,13 +224,8 @@ const CreateOrderContent = () => {
   }
 
   return (
-    <div className="h-screen bg-white p-6 font-sans flex flex-col overflow-hidden">
-       <header className="mb-6 flex justify-between items-center shrink-0">
-           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{orderId ? 'Edit Order' : 'New Order'}</h1>
-            <p className="text-gray-500">{orderId ? 'Modify items in this order' : 'Select items to add to the customer\'s bill'}</p>
-           </div>
-       </header>
+    <div className="h-screen bg-white px-6 pt-6 font-sans flex flex-col overflow-hidden">
+       
 
        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-0">
            {/* Menu Section */}
@@ -407,89 +303,83 @@ const CreateOrderContent = () => {
            </div>
 
            {/* Cart Section */}
-           <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200 h-full flex flex-col overflow-hidden">
-               <h2 className="font-bold text-xl mb-6 text-gray-800 flex justify-between items-center shrink-0">
+           <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200 h-full flex flex-col overflow-hidden">
+               <h2 className="font-bold text-lg mb-4 text-gray-800 flex justify-between items-center shrink-0">
                    <div className="flex items-center gap-2">
                        Current Order
                        {orderType === 'dine-in' && tableNo && (
-                           <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-md border border-blue-200 ml-2">
+                           <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md border border-blue-200 ml-2">
                                Table {tableNo}
                            </span>
                        )}
                    </div>
-                   <span className="text-xs bg-white border border-gray-200 px-2 py-1 rounded-md text-gray-600 font-medium">{cart.length} items</span>
+                   <span className="text-[10px] bg-white border border-gray-200 px-2 py-0.5 rounded-md text-gray-600 font-medium">{cart.length} items</span>
                </h2>
 
                {/* Order Type Toggle */}
-               <div className="bg-gray-100 p-1 rounded-xl flex mb-4 shrink-0">
+               <div className="bg-gray-100 p-1 rounded-lg flex mb-3 shrink-0">
                    <button 
                        onClick={() => setOrderType('dine-in')}
-                       className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${orderType === 'dine-in' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                       className={`flex-1 py-1.5 rounded-md text-xs font-bold transition-all ${orderType === 'dine-in' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                    >
                        Dine In
                    </button>
                    <button 
                        onClick={() => setOrderType('take-away')}
-                       className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${orderType === 'take-away' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                       className={`flex-1 py-1.5 rounded-md text-xs font-bold transition-all ${orderType === 'take-away' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                    >
                        Take Away
                    </button>
                </div>
 
                {orderType === 'dine-in' && (
-                   <div className="mb-6 shrink-0">
-                       <h3 className="text-sm font-bold text-gray-700 mb-3 ml-1">Select Table</h3>
-                       <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
-                           {Array.from({ length: totalTables }, (_, i) => String(i + 1)).map((num) => {
-                               const isOccupied = !!activeTables[num];
-                               const isSelected = tableNo === num;
-                               const isCurrentOrder = activeTables[num] === orderId;
-                               
-                               return (
-                                   <button
-                                       key={num}
-                                       onClick={() => handleTableClick(num)}
-                                       className={`
-                                           h-10 rounded-lg text-sm font-bold border transition-all relative overflow-hidden
-                                           ${isSelected 
-                                               ? 'bg-blue-600 text-white border-blue-600 shadow-md' 
-                                               : isOccupied 
-                                                   ? isCurrentOrder ? 'bg-blue-600 text-white border-blue-600' : 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100' 
-                                                   : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                                           }
-                                       `}
-                                   >
-                                       {num}
-                                       {isOccupied && !isCurrentOrder && (
-                                           <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full m-1"></span>
-                                       )}
-                                   </button>
-                               );
-                           })}
+                   <div className="mb-4 shrink-0">
+                       <label className={`text-xs font-bold mb-1.5 ml-1 block ${showTableError ? 'text-red-500' : 'text-gray-700'}`}>Select Table <span className="text-red-500">*</span></label>
+                       <div className="relative">
+                            <select 
+                                value={tableNo}
+                                onChange={(e) => handleTableClick(e.target.value)}
+                                className={`w-full p-2.5 bg-gray-50 border rounded-xl text-sm text-gray-700 focus:outline-none appearance-none font-medium transition-all hover:bg-white cursor-pointer ${showTableError ? 'border-red-500 ring-1 ring-red-500 bg-red-50' : 'border-gray-200 focus:ring-2 focus:ring-blue-500'}`}
+                            >
+                                <option value="" disabled>Choose a table...</option>
+                                {Array.from({ length: totalTables }, (_, i) => String(i + 1)).map((num) => {
+                                    const isOccupied = !!activeTables[num];
+                                    const isCurrentOrder = activeTables[num] === orderId;
+                                    return (
+                                        <option key={num} value={num} className={isOccupied && !isCurrentOrder ? "text-red-500 font-bold" : ""}>
+                                            Table {num} {isOccupied && !isCurrentOrder ? '(Occupied)' : ''}
+                                        </option>
+                                    );
+                                })}
+                            </select>
+                            <div className={`absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none ${showTableError ? 'text-red-500' : 'text-gray-500'}`}>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>
+                            </div>
                        </div>
+                       {showTableError && <p className="text-[10px] text-red-500 mt-1 font-bold ml-1">Please select a table to proceed.</p>}
                    </div>
                )}
                
-               <div className="flex-1 overflow-y-auto space-y-3 pr-2 mb-4 min-h-0">
+               <div className="flex-1 overflow-y-auto space-y-2 pr-1 mb-3 min-h-0">
                     {cart.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-gray-400 text-center">
-                            <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mb-4">
-                                <Search size={24} className="opacity-50" />
+                            <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mb-3">
+                                <Search size={20} className="opacity-50" />
                             </div>
-                            <p>No items added yet</p>
+                            <p className="text-sm">No items added yet</p>
                         </div>
                     ) : (
                         cart.map((item) => (
-                            <div key={item.menuItem} className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center group">
+                            <div key={item.menuItem} className="bg-white p-2 rounded-lg border border-gray-100 shadow-sm flex justify-between items-center group">
                                 <div>
-                                    <div className="text-sm font-bold text-gray-900 leading-tight">{item.name}</div>
-                                    <div className="text-xs text-gray-500 font-medium">Rs {item.price} x {item.quantity}</div>
+                                    <div className="text-sm font-bold text-gray-900 leading-tight line-clamp-1">{item.name}</div>
+                                    <div className="text-[10px] text-gray-500 font-medium">Rs {item.price} x {item.quantity}</div>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                    <span className="font-bold text-gray-900">Rs {(item.price * item.quantity).toFixed(2)}</span>
-                                    <div className="flex items-center bg-gray-100 rounded-lg p-1">
-                                        <button onClick={(e) => {e.stopPropagation(); removeFromCart(item.menuItem)}} className="w-6 h-6 flex items-center justify-center hover:bg-white rounded text-gray-600">-</button>
-                                        <button onClick={(e) => {e.stopPropagation(); addToCart({...item, _id: item.menuItem, category: ''})}} className="w-6 h-6 flex items-center justify-center hover:bg-white rounded text-gray-600">+</button>
+                                <div className="flex items-center gap-2">
+                                    <span className="font-bold text-gray-900 text-sm">Rs {(item.price * item.quantity).toFixed(2)}</span>
+                                    <div className="flex items-center bg-gray-100 rounded-md p-0.5">
+                                        <button onClick={(e) => {e.stopPropagation(); removeFromCart(item.menuItem)}} className="w-5 h-5 flex items-center justify-center hover:bg-white rounded text-gray-600 text-xs">-</button>
+                                        <button onClick={(e) => {e.stopPropagation(); addToCart({...item, _id: item.menuItem, category: ''})}} className="w-5 h-5 flex items-center justify-center hover:bg-white rounded text-gray-600 text-xs">+</button>
                                     </div>
                                 </div>
                             </div>
@@ -497,21 +387,21 @@ const CreateOrderContent = () => {
                     )}
                </div>
 
-               <div className="pt-6 border-t border-gray-200 shrink-0">
-                    <div className="flex justify-between mb-2 text-gray-500 text-sm">
+               <div className="pt-4 border-t border-gray-200 shrink-0">
+                    <div className="flex justify-between mb-1 text-gray-500 text-xs">
                         <span>Subtotal</span>
                         <span>Rs {cart.reduce((acc, i) => acc + (i.price * i.quantity), 0).toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between font-bold text-3xl text-gray-900 mb-6">
+                    <div className="flex justify-between font-bold text-2xl text-gray-900 mb-4">
                        <span>Total</span>
                        <span>Rs {cart.reduce((acc, i) => acc + (i.price * i.quantity), 0).toFixed(2)}</span>
                    </div>
 
-                   <div className="grid grid-cols-4 gap-3">
+                   <div className="grid grid-cols-4 gap-2">
                        <button 
                         onClick={() => submitOrder(false)} 
                         disabled={cart.length === 0}
-                        className="col-span-2 py-2 text-sm bg-black text-white rounded-xl font-bold hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gray-200"
+                        className="col-span-2 py-3 text-sm bg-black text-white rounded-xl font-bold hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gray-200"
                        >
                            {orderId ? "Update Order" : "Place Order"}
                        </button>
@@ -605,7 +495,7 @@ const CreateOrderContent = () => {
                                }
                            }}
                            disabled={cart.length === 0}
-                           className="col-span-2 py-2 text-sm bg-gray-100 text-gray-900 rounded-xl font-bold hover:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center justify-center gap-0.5 border border-gray-200"
+                           className="col-span-2 py-3 text-sm bg-gray-100 text-gray-900 rounded-xl font-bold hover:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center justify-center gap-0.5 border border-gray-200"
                        >
                            <span className="text-xl">🖨️</span>
                            <span className="text-[10px] uppercase tracking-wide">{orderId ? "Update & Print" : "Place & Print"}</span>
@@ -614,6 +504,7 @@ const CreateOrderContent = () => {
                </div>
            </div>
        </div>
+       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 }
