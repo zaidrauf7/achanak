@@ -138,11 +138,11 @@ export default function DineInPage() {
                         const isOccupied = !!order;
 
                         return (
-                            <button
+                            <div
                                 key={num}
                                 onClick={() => handleTableClick(num)}
                                 className={`
-                                    relative h-48 rounded-3xl border-2 transition-all duration-300 flex flex-col items-center justify-center gap-3 group
+                                    relative h-48 rounded-3xl border-2 transition-all duration-300 flex flex-col items-center justify-center gap-3 group cursor-pointer
                                     ${isOccupied 
                                         ? 'bg-white border-red-200 shadow-lg shadow-red-50 hover:border-red-300' 
                                         : 'bg-white border-gray-100 hover:border-blue-300 hover:shadow-lg hover:scale-[1.02]'
@@ -191,7 +191,7 @@ export default function DineInPage() {
                                         </button>
                                     </>
                                 )}
-                            </button>
+                            </div>
                         );
                     })}
                     
