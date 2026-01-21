@@ -28,6 +28,8 @@ const CreateOrderContent = () => {
   const [filter, setFilter] = useState("All");
   const [orderType, setOrderType] = useState("take-away");
   const [tableNo, setTableNo] = useState("");
+  const [discountPercent, setDiscountPercent] = useState<string>("");
+  const [discountAmount, setDiscountAmount] = useState<string>("");
   const [totalTables, setTotalTables] = useState(12);
   const [activeTables, setActiveTables] = useState<Record<string, string>>({}); // tableNo -> orderId
   const [showTableError, setShowTableError] = useState(false);
@@ -139,11 +141,15 @@ const CreateOrderContent = () => {
          setShowTableError(true);
          return null;
      }
+     const subTotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+     const discountValue = Number(discountAmount) || 0;
+     const totalAmount = Math.max(0, subTotal - discountValue);
 
-     const totalAmount = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
      const orderData = {
          items: cart,
          totalAmount,
+         subTotal,
+         discount: discountValue,
          status: "pending",
          orderType,
          tableNo: orderType === 'dine-in' ? tableNo : undefined
@@ -174,12 +180,16 @@ const CreateOrderContent = () => {
              // We still reset cart but return the data
              setCart([]);
              setTableNo("");
+             setDiscountPercent("");
+             setDiscountAmount("");
              // Refresh active tables
              refreshActiveTables();
              return data;
          }
 
          setCart([]);
+         setDiscountPercent("");
+         setDiscountAmount("");
          if (orderId) {
              router.push('/orders');
          } else {
@@ -212,19 +222,46 @@ const CreateOrderContent = () => {
   };
    
 
-  const categories = Array.from(new Set(["All", "Biryani", "Pulao", "Palak", "Dal", "Dessert", "Sides", "Drinks", ...menu.map(item => item.category)]));
+  const categories = Array.from(new Set([
+    "All Products", 
+    "Chicken Biryani",
+    "Daal Chawal", 
+    "Chicken Pulao", 
+    "Daal",
+    "BEEF Pulao", 
+    "Drinks", 
+    "Raita + Salad", 
+    "Palak Chawal", 
+    "Zarda", 
+    ...menu.map(item => {
+        const cat = item.category ? item.category.trim() : "";
+        if (cat === "Dessert") return "Zarda";
+        if (cat === "Biryani") return "Chicken Biryani";
+        if (cat === "Daal") return "Daal Chawal";
+        if (cat === "Pulao") return "Chicken Pulao";
+        if (cat === "Sides") return "Raita + Salad";
+        return cat;
+    }).filter(Boolean)
+  ]));
   const filteredMenu = menu.filter((item) => {
       const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase());
-      const matchesCategory = filter === "All" || item.category === filter;
+      const matchesCategory = filter === "All" || 
+                              filter === "All Products" || 
+                              item.category === filter || 
+                              (filter === "Zarda" && item.category === "Dessert") ||
+                              (filter === "Chicken Biryani" && item.category === "Biryani") ||
+                              (filter === "Daal Chawal" && item.category === "Daal") ||
+                              (filter === "Chicken Pulao" && item.category === "Pulao") ||
+                              (filter === "Raita + Salad" && item.category === "Sides");
       return matchesSearch && matchesCategory;
-  });
+  }).sort((a, b) => b.price - a.price);
 
   if (loading) {
       return <Loader fullScreen={false} className="h-screen" text="Loading menu..." />;
   }
 
   return (
-    <div className="h-screen bg-white px-6 pt-6 font-sans flex flex-col overflow-hidden">
+    <div className="h-screen bg-white px-3 pt-6 font-sans flex flex-col overflow-hidden">
        
 
        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-0">
@@ -232,23 +269,25 @@ const CreateOrderContent = () => {
            <div className="lg:col-span-3 flex flex-col h-full min-h-0">
                
                {/* Search & Filter Bar */}
-               <div className="mb-4 flex gap-4 shrink-0">
-                   <div className="relative flex-1">
+               <div className="mb-1 flex flex-col gap-2 shrink-0">
+                   <div className="flex gap-1">
+                    <div className="relative flex-1">
                        <Search className="absolute left-3 top-3 text-gray-400" size={20} />
                        <input 
                          type="text" 
                          placeholder="Search menu..." 
                          value={search}
                          onChange={(e) => setSearch(e.target.value)}
-                         className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-gray-500"
+                         className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-gray-500"
                        />
+                   </div>
                    </div>
                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
                        {categories.map(cat => (
                            <button 
                              key={cat}
                              onClick={() => setFilter(cat)}
-                             className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors ${filter === cat ? 'bg-black text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                             className={`px-2 border-purple-500 border-1 py-1 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${filter === cat ? 'bg-black text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
                            >
                                {cat}
                            </button>
@@ -258,17 +297,17 @@ const CreateOrderContent = () => {
 
                {/* Menu Grid */}
                <div className="flex-1 overflow-y-auto pr-2 pb-2">
-                   <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                   <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7 gap-3">
                        {filteredMenu.map((item) => (
                            <button 
                              key={item._id} 
                              onClick={() => addToCart(item)}
-                             className="group relative bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-xl hover:scale-[1.02] transition-all flex flex-col items-start text-left overflow-hidden h-64"
+                             className="group relative bg-white rounded-xl shadow-sm border border-gray-100  hover:scale-[1.02] transition-all flex flex-col items-start text-left overflow-hidden h-36 "
                            >
                                {/* Image Background */}
-                               <div className="h-40 w-full relative overflow-hidden bg-gray-100">
+                               <div className="h-18 w-full relative overflow-hidden bg-gray-100">
                                    {item.image ? (
-                                       <img src={item.image} alt={item.name} className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500" />
+                                       <img src={item.image} alt={item.name} className="w-full h-full object-cover transition-transform duration-500 object-center" />
                                    ) : (
                                        <div className="w-full h-full flex items-center justify-center text-gray-300">
                                            <span className="text-4xl">🍛</span>
@@ -276,19 +315,19 @@ const CreateOrderContent = () => {
                                    )}
                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60"></div>
                                    
-                                   <span className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-md text-xs font-bold text-gray-800 uppercase tracking-wider shadow-sm">
+                                   {/* <span className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-md text-xs font-bold text-gray-800 uppercase tracking-wider shadow-sm">
                                        {item.category}
-                                   </span>
+                                   </span> */}
                                </div>
 
                                {/* Content */}
-                               <div className="p-4 w-full flex flex-col justify-between flex-1">
-                                    <h3 className="font-bold text-gray-900 text-lg leading-tight line-clamp-2">{item.name}</h3>
-                                    <div className="flex justify-between items-center mt-2 w-full">
-                                        <span className="font-extrabold text-blue-600 text-xl">Rs {item.price}</span>
-                                        <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                               <div className="p-2 w-full flex flex-col justify-between flex-1">
+                                    <h3 className="font-bold text-gray-900 text-xs  leading-tight line-clamp-2">{item.name}</h3>
+                                    <div className="flex justify-between items-center mt-1 w-full">
+                                        <span className="font-extrabold text-blue-600 text-md"> {item.price.toFixed(2)}</span>
+                                        {/* <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
                                             <span className="text-lg font-light">+</span>
-                                        </div>
+                                        </div> */}
                                     </div>
                                </div>
                            </button>
@@ -360,7 +399,7 @@ const CreateOrderContent = () => {
                    </div>
                )}
                
-               <div className="flex-1 overflow-y-auto space-y-2 pr-1 mb-3 min-h-0">
+               <div className="flex-1 overflow-y-auto pr-1 mb-3 min-h-0">
                     {cart.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-gray-400 text-center">
                             <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mb-3">
@@ -369,39 +408,103 @@ const CreateOrderContent = () => {
                             <p className="text-sm">No items added yet</p>
                         </div>
                     ) : (
-                        cart.map((item) => (
-                            <div key={item.menuItem} className="bg-white p-2 rounded-lg border border-gray-100 shadow-sm flex justify-between items-center group">
-                                <div>
-                                    <div className="text-sm font-bold text-gray-900 leading-tight line-clamp-1">{item.name}</div>
-                                    <div className="text-[10px] text-gray-500 font-medium">Rs {item.price} x {item.quantity}</div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="font-bold text-gray-900 text-sm">Rs {(item.price * item.quantity).toFixed(2)}</span>
-                                    <div className="flex items-center bg-gray-100 rounded-md p-0.5">
-                                        <button onClick={(e) => {e.stopPropagation(); removeFromCart(item.menuItem)}} className="w-5 h-5 flex items-center justify-center hover:bg-white rounded text-gray-600 text-xs">-</button>
-                                        <button onClick={(e) => {e.stopPropagation(); addToCart({...item, _id: item.menuItem, category: ''})}} className="w-5 h-5 flex items-center justify-center hover:bg-white rounded text-gray-600 text-xs">+</button>
-                                    </div>
-                                </div>
-                            </div>
-                        ))
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="text-[10px] uppercase tracking-wider text-gray-500 border-b border-gray-200 sticky top-0 bg-gray-50 z-10">
+                                    <th className="py-2 font-medium pl-1">Item</th>
+                                    <th className="py-2 font-medium text-center">Qty</th>
+                                    <th className="py-2 font-medium text-center">Disc</th>
+                                    <th className="py-2 font-medium text-right pr-1">Price</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {cart.map((item) => (
+                                    <tr key={item.menuItem} className="border-b border-gray-100 last:border-0 hover:bg-white transition-colors group">
+                                        <td className="py-2 pl-1 max-w-[120px]">
+                                             <div className="text-xs font-bold text-gray-900 leading-tight line-clamp-2">{item.name}</div>
+                                        </td>
+                                        <td className="py-2">
+                                            <div className="flex items-center justify-center bg-gray-100 rounded-md p-0.5 gap-1 w-fit mx-auto">
+                                                <button onClick={(e) => {e.stopPropagation(); removeFromCart(item.menuItem)}} className="w-5 h-5 flex items-center justify-center hover:bg-white rounded shadow-sm text-gray-600 text-[10px] font-bold transition-all">-</button>
+                                                <span className="text-xs font-bold text-gray-900 w-4 text-center">{item.quantity}</span>
+                                                <button onClick={(e) => {e.stopPropagation(); addToCart({...item, _id: item.menuItem, category: ''})}} className="w-5 h-5 flex items-center justify-center hover:bg-white rounded shadow-sm text-gray-600 text-[10px] font-bold transition-all">+</button>
+                                            </div>
+                                        </td>
+                                        <td className="py-2 text-center text-xs text-gray-400">
+                                            0
+                                        </td>
+                                        <td className="py-2 text-right font-bold text-gray-900 text-sm pr-1">
+                                            {(item.price * item.quantity).toFixed(0)}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     )}
                </div>
 
-               <div className="pt-4 border-t border-gray-200 shrink-0">
-                    <div className="flex justify-between mb-1 text-gray-500 text-xs">
-                        <span>Subtotal</span>
-                        <span>Rs {cart.reduce((acc, i) => acc + (i.price * i.quantity), 0).toFixed(2)}</span>
+                <div className="pt-4 border-t border-gray-200 shrink-0">
+                    <div className="flex justify-between mb-2 text-gray-500 text-xs font-medium">
+                        <span>Items Count: {cart.length}</span>
+                        <span>Subtotal: {cart.reduce((acc, i) => acc + (i.price * i.quantity), 0).toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between font-bold text-2xl text-gray-900 mb-4">
-                       <span>Total</span>
-                       <span>Rs {cart.reduce((acc, i) => acc + (i.price * i.quantity), 0).toFixed(2)}</span>
+
+                    <div className="flex gap-2 mb-3">
+                        <div className="flex-1">
+                            <label className="text-[10px] text-gray-500 block mb-1">Dis %</label>
+                            <input 
+                                type="number" 
+                                min="0"
+                                max="100"
+                                value={discountPercent} 
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setDiscountPercent(val);
+                                    const subTotal = cart.reduce((acc, i) => acc + (i.price * i.quantity), 0);
+                                    if (!val) {
+                                        setDiscountAmount("");
+                                    } else {
+                                        const amount = (subTotal * parseFloat(val)) / 100;
+                                        setDiscountAmount(amount.toFixed(2));
+                                    }
+                                }}
+                                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-blue-500"
+                                placeholder="0"
+                            />
+                        </div>
+                        <div className="flex-1">
+                            <label className="text-[10px] text-gray-500 block mb-1">Dis</label>
+                            <input 
+                                type="number" 
+                                min="0" 
+                                value={discountAmount} 
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setDiscountAmount(val);
+                                    const subTotal = cart.reduce((acc, i) => acc + (i.price * i.quantity), 0);
+                                    if (!val) {
+                                        setDiscountPercent("");
+                                    } else {
+                                        const percent = (parseFloat(val) / subTotal) * 100;
+                                        setDiscountPercent(percent.toFixed(2));
+                                    }
+                                }}
+                                className="w-full bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:border-blue-500"
+                                placeholder="0"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="bg-gray-900 text-white p-3 rounded-xl flex justify-between items-center mb-4 shadow-lg shadow-gray-200">
+                       <span className="font-bold">Grand Total</span>
+                       <span className="font-bold text-xl">Rs {Math.max(0, cart.reduce((acc, i) => acc + (i.price * i.quantity), 0) - (Number(discountAmount) || 0)).toFixed(2)}</span>
                    </div>
 
-                   <div className="grid grid-cols-4 gap-2">
+                   <div className="grid grid-cols-5 gap-2">
                        <button 
                         onClick={() => submitOrder(false)} 
                         disabled={cart.length === 0}
-                        className="col-span-2 py-3 text-sm bg-black text-white rounded-xl font-bold hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gray-200"
+                        className="col-span-2 py-2 text-sm bg-black text-white rounded-xl font-bold hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gray-200"
                        >
                            {orderId ? "Update Order" : "Place Order"}
                        </button>
@@ -409,8 +512,12 @@ const CreateOrderContent = () => {
                            onClick={async () => {
                                // Capture cart snapshot before submit clears it
                                const cartSnapshot = [...cart];
-                               const total = cartSnapshot.reduce((acc, i) => acc + (i.price * i.quantity), 0).toFixed(2);
+                               const subTotal = cartSnapshot.reduce((acc, i) => acc + (i.price * i.quantity), 0);
+                               const discountVal = Number(discountAmount) || 0;
+                               const finalTotal = Math.max(0, subTotal - discountVal).toFixed(2);
                                const date = new Date().toLocaleString();
+                               
+                               // Open window first to avoid popup blocker logic
                                
                                // Open window first to avoid popup blocker logic
                                const win = window.open('', '', 'width=400,height=600');
@@ -431,53 +538,108 @@ const CreateOrderContent = () => {
                                        <head>
                                            <title>Print Receipt</title>
                                            <style>
-                                               body { font-family: 'Courier New', monospace; text-align: center; max-width: 300px; margin: 0 auto; padding: 20px; }
-                                               .header { margin-bottom: 20px; border-bottom: 1px dashed #000; padding-bottom: 10px; }
-                                               .title { font-size: 20px; font-weight: bold; margin: 0; }
-                                               .subtitle { font-size: 12px; }
-                                               .meta { text-align: left; font-size: 12px; margin-bottom: 10px; }
-                                               .items { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 12px; }
-                                               .items th { border-bottom: 1px dashed #000; text-align: left; }
-                                               .items td { padding: 4px 0; }
-                                               .total { border-top: 1px dashed #000; padding-top: 10px; font-weight: bold; font-size: 16px; text-align: right; }
-                                               .footer { margin-top: 20px; font-size: 12px; }
+                                               body { font-family: 'Courier New', monospace; font-size: 12px; margin: 0 auto; padding: 10px; width: 300px; color: #000; }
+                                               .text-center { text-align: center; }
+                                               .text-right { text-align: right; }
+                                               .text-left { text-align: left; }
+                                               .bold { font-weight: bold; }
+                                               .header { margin-bottom: 10px; }
+                                               .store-name { font-size: 18px; font-weight: bold; margin-bottom: 5px; }
+                                               .address { font-size: 10px; margin-bottom: 5px; line-height: 1.2; }
+                                               .contact { font-size: 12px; font-weight: bold; margin-bottom: 15px; }
+                                               
+                                               .meta-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+                                               .order-no { font-size: 16px; font-weight: bold; margin: 10px 0; text-align: center; }
+                                               
+                                               .items-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                                               .items-table th { text-align: left; border-bottom: 1px dotted #000; padding: 5px 0; font-size: 12px; }
+                                               .items-table td { padding: 5px 0; vertical-align: top; font-size: 12px; }
+                                               .item-name { padding-right: 5px; }
+                                               
+                                               .dotted-line { border-bottom: 1px dotted #000; margin: 5px 0; }
+                                               
+                                               .totals { margin-top: 10px; }
+                                               .total-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+                                               .grand-total { font-size: 14px; font-weight: bold; margin-top: 5px; }
+                                               
+                                               .footer { margin-top: 20px; text-align: center; font-size: 10px; font-weight: bold; }
                                            </style>
                                        </head>
                                        <body>
-                                           <div class="header">
-                                               <h1 class="title">Achanak</h1>
-                                               <p class="subtitle">Authentic Flavors</p>
+                                           <div class="header text-center">
+                                               <div class="store-name">ACHANAK FOODS</div>
+                                               <div class="address">H72M+H72, C Block Block C Gulshan-e-<br>Ravi, Lahore, Punjab 54000</div>
+                                               <div class="contact">Contact # 03236060340</div>
                                            </div>
-                                           <div class="meta">
-                                               <div>Date: ${date}</div>
-                                               <div>Type: ${orderType === 'dine-in' ? 'Dine In' : 'Take Away'}</div>
-                                               ${orderType === 'dine-in' && tableNo ? `<div>Table: ${tableNo}</div>` : ''}
-                                               <div>Order #: ${finalOrderId.slice(-4)}</div>
+
+                                           <div class="meta-row">
+                                               <div><span class="bold">Invoice #</span> ${finalOrderId.slice(-6).toUpperCase()}</div>
+                                               <div class="text-right">
+                                                   <div style="font-size: 10px; color: #666;">Punched By</div>
+                                                   <div class="bold">Mr.Nadeem</div>
+                                               </div>
                                            </div>
-                                           <table class="items">
+                                           
+                                           <div class="meta-row">
+                                               <div><span class="bold">Date:</span> ${date}</div>
+                                           </div>
+
+                                           <div class="order-no">Order # ${finalOrderId.slice(-4)}</div>
+
+                                           <div class="meta-row bold" style="margin-bottom: 15px;">
+                                                <div>Order Type:</div>
+                                                <div>${orderType === 'dine-in' ? `Dine In (${tableNo})` : 'TakeAway'}</div>
+                                           </div>
+
+                                           <table class="items-table">
                                                <thead>
                                                    <tr>
-                                                       <th>Item</th>
-                                                       <th>Qty</th>
-                                                       <th style="text-align:right">Price</th>
+                                                       <th style="width: 45%;">Product</th>
+                                                       <th style="width: 15%; text-align: center;">Qty</th>
+                                                       <th style="width: 20%; text-align: right;">Rate</th>
+                                                       <th style="width: 20%; text-align: right;">Total</th>
                                                    </tr>
                                                </thead>
                                                <tbody>
                                                    ${cartSnapshot.map(item => `
                                                        <tr>
-                                                           <td>${item.name}</td>
-                                                           <td>${item.quantity}</td>
-                                                           <td style="text-align:right">Rs ${(item.price * item.quantity).toFixed(2)}</td>
+                                                           <td class="item-name">
+                                                               ${item.name}
+                                                               <div style="font-size: 10px; color: #666; display:none;">(Description if any)</div>
+                                                           </td>
+                                                           <td style="text-align: center;">${item.quantity}</td>
+                                                           <td style="text-align: right;">${item.price.toFixed(2)}</td>
+                                                           <td style="text-align: right;">${(item.price * item.quantity).toFixed(2)}</td>
+                                                       </tr>
+                                                       <tr>
+                                                            <td colspan="4" style="border-bottom: 1px dotted #ccc;"></td>
                                                        </tr>
                                                    `).join('')}
                                                </tbody>
                                            </table>
-                                           <div class="total">
-                                               Total: Rs ${total}
+
+                                           <div class="totals">
+                                               <div class="dotted-line"></div>
+                                               <div class="total-row bold">
+                                                   <span>Subtotal:</span>
+                                                   <span>${subTotal.toFixed(2)}</span>
+                                               </div>
+                                               
+                                               ${discountVal > 0 ? `
+                                                   <div class="total-row" style="font-size: 11px;">
+                                                        <span>Discount ${discountPercent ? `(${Number(discountPercent).toFixed(0)}%)` : ''}:</span>
+                                                        <span>-${discountVal.toFixed(2)}</span>
+                                                   </div>
+                                               ` : ''}
+                                               
+                                               <div class="dotted-line"></div>
+                                               <div class="total-row grand-total">
+                                                   <span>Grand Total:</span>
+                                                   <span>${finalTotal}</span>
+                                               </div>
+                                               <div class="dotted-line"></div>
                                            </div>
-                                           <div class="footer">
-                                               <p>Thank you for visiting!</p>
-                                           </div>
+
                                            <script>
                                                window.onload = function() { window.print(); window.close(); }
                                            </script>
@@ -495,9 +657,9 @@ const CreateOrderContent = () => {
                                }
                            }}
                            disabled={cart.length === 0}
-                           className="col-span-2 py-3 text-sm bg-gray-100 text-gray-900 rounded-xl font-bold hover:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex flex-col items-center justify-center gap-0.5 border border-gray-200"
+                           className="col-span-2 py-2 text-sm bg-gray-100 text-gray-900 rounded-xl font-bold hover:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex  items-center justify-center gap-0.5 border border-gray-200"
                        >
-                           <span className="text-xl">🖨️</span>
+                           <span className="text-lg">🖨️</span>
                            <span className="text-[10px] uppercase tracking-wide">{orderId ? "Update & Print" : "Place & Print"}</span>
                        </button>
                    </div>
