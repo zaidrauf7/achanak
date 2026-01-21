@@ -17,7 +17,7 @@ export default function ManageMenuPage() {
   const [formData, setFormData] = useState({
     name: "",
     price: "",
-    category: "Biryani",
+    category: "Chicken Biryani",
     image: "",
   });
   const [loading, setLoading] = useState(false);
@@ -65,7 +65,7 @@ export default function ManageMenuPage() {
     }
 
     if (res.ok) {
-      setFormData({ name: "", price: "", category: "Biryani", image: "" });
+      setFormData({ name: "", price: "", category: "Chicken Biryani", image: "" });
       setEditingId(null);
       fetchItems(); 
     } else {
@@ -102,7 +102,7 @@ export default function ManageMenuPage() {
 
   const handleCancelEdit = () => {
       setEditingId(null);
-      setFormData({ name: "", price: "", category: "Biryani", image: "" });
+      setFormData({ name: "", price: "", category: "Chicken Biryani", image: "" });
   };
 
   if (initialLoading) {
@@ -179,12 +179,14 @@ export default function ManageMenuPage() {
                                     onChange={(e) => setFormData({...formData, category: e.target.value})}
                                     className="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none transition appearance-none cursor-pointer text-gray-700"
                                 >
-                                    <option value="Biryani">Biryani</option>
-                                    <option value="Pulao">Pulao</option>
-                                    <option value="Palak">Palak</option>
-                                    <option value="Dal">Dal</option>
-                                    <option value="Dessert">Dessert</option>
-                                    <option value="Sides">Sides</option>
+                                    <option value="Chicken Biryani">Chicken Biryani</option>
+                                    <option value="Daal Chawal">Daal Chawal</option>
+                                    <option value="Daal">Daal</option>
+                                    <option value="Chicken Pulao">Chicken Pulao</option>
+                                    <option value="Palak Chawal">Palak Chawal</option>
+                                    <option value="BEEF Pulao">BEEF Pulao</option>
+                                    <option value="Zarda">Zarda</option>
+                                    <option value="Raita + Salad">Raita + Salad</option>
                                     <option value="Drinks">Drinks</option>
                                 </select>
                                 <ChevronDown className="absolute right-4 top-3.5 text-gray-500 pointer-events-none" size={16} />
@@ -212,10 +214,10 @@ export default function ManageMenuPage() {
                             <div key={item._id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition group">
                                 <div className="flex items-center gap-4">
                                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold shrink-0 overflow-hidden ${
-                                        item.category === 'Biryani' ? 'bg-orange-50 text-orange-600' :
-                                        item.category === 'Pulao' ? 'bg-yellow-50 text-yellow-600' :
-                                        item.category === 'Palak' ? 'bg-green-50 text-green-600' :
-                                        item.category === 'Dal' ? 'bg-amber-50 text-amber-600' : 
+                                        item.category.includes('Biryani') ? 'bg-orange-50 text-orange-600' :
+                                        item.category.includes('Pulao') ? 'bg-yellow-50 text-yellow-600' :
+                                        item.category.includes('Palak') ? 'bg-green-50 text-green-600' :
+                                        item.category.includes('Daal') ? 'bg-amber-50 text-amber-600' : 
                                         'bg-blue-50 text-blue-600'
                                     }`}>
                                         {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-cover" /> : item.name[0]}
