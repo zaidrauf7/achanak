@@ -612,7 +612,7 @@ const CreateOrderContent = () => {
                                                            <td style="text-align: right;">${(item.price * item.quantity).toFixed(2)}</td>
                                                        </tr>
                                                        <tr>
-                                                            <td colspan="4" style="border-bottom: 1px dotted #ccc;"></td>
+                                                            <td colspan="4" style="border-bottom: 1px solid #000;"></td>
                                                        </tr>
                                                    `).join('')}
                                                </tbody>
