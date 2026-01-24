@@ -25,7 +25,7 @@ const CreateOrderContent = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState("All");
+  const [filter, setFilter] = useState("Chicken Biryani");
   const [orderType, setOrderType] = useState("take-away");
   const [tableNo, setTableNo] = useState("");
   const [discountPercent, setDiscountPercent] = useState<string>("");
@@ -34,6 +34,7 @@ const CreateOrderContent = () => {
   const [activeTables, setActiveTables] = useState<Record<string, string>>({}); // tableNo -> orderId
   const [showTableError, setShowTableError] = useState(false);
   const [toast, setToast] = useState<{message: string, type: 'success' | 'error'} | null>(null);
+  const [kitchenPrinted, setKitchenPrinted] = useState(false);
   const router = useRouter();
 
   const searchParams = useSearchParams();
@@ -85,6 +86,7 @@ const CreateOrderContent = () => {
             })
             .then(data => {
                 setCart(data.items || []);
+                setKitchenPrinted(data.kitchenPrinted || false);
                 if (data.orderType) setOrderType(data.orderType);
                 if (data.tableNo) setTableNo(data.tableNo);
             })
@@ -136,7 +138,7 @@ const CreateOrderContent = () => {
       }
   };
 
-  const submitOrder = async (returnOrder = false) => {
+  const submitOrder = async (returnOrder = false, isKitchen = false) => {
      if (orderType === 'dine-in' && !tableNo) {
          setShowTableError(true);
          return null;
@@ -152,7 +154,8 @@ const CreateOrderContent = () => {
          discount: discountValue,
          status: "pending",
          orderType,
-         tableNo: orderType === 'dine-in' ? tableNo : undefined
+         tableNo: orderType === 'dine-in' ? tableNo : undefined,
+         kitchenPrinted: isKitchen || kitchenPrinted
      };
 
      let res;
@@ -223,7 +226,7 @@ const CreateOrderContent = () => {
    
 
   const categories = Array.from(new Set([
-    "All Products", 
+
     "Chicken Biryani",
     "Daal Chawal", 
     "Chicken Pulao", 
@@ -501,166 +504,367 @@ const CreateOrderContent = () => {
                    </div>
 
                    <div className="grid grid-cols-5 gap-2">
-                       <button 
-                        onClick={() => submitOrder(false)} 
-                        disabled={cart.length === 0}
-                        className="col-span-2 py-2 text-sm bg-black text-white rounded-xl font-bold hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gray-200"
-                       >
-                           {orderId ? "Update Order" : "Place Order"}
-                       </button>
                        <button
                            onClick={async () => {
-                               // Capture cart snapshot before submit clears it
                                const cartSnapshot = [...cart];
                                const subTotal = cartSnapshot.reduce((acc, i) => acc + (i.price * i.quantity), 0);
                                const discountVal = Number(discountAmount) || 0;
                                const finalTotal = Math.max(0, subTotal - discountVal).toFixed(2);
                                const date = new Date().toLocaleString();
                                
-                               // Open window first to avoid popup blocker logic
-                               
-                               // Open window first to avoid popup blocker logic
                                const win = window.open('', '', 'width=400,height=600');
-                               if(win) win.document.write('<html><body><h3>Processing Order...</h3></body></html>');
+                               if(win) win.document.write('<html><body><h3>Processing...</h3></body></html>');
 
-                               // Submit Order
                                const savedOrder = await submitOrder(true);
-                               
-                               if (!savedOrder) {
-                                   win?.close();
-                                   return; 
-                               }
+                               if (!savedOrder) { win?.close(); return; }
                                
                                const finalOrderId = savedOrder._id || orderId || 'New';
 
+                               const css = `
+                                   * { box-sizing: border-box; }
+                                   body { font-family: sans-serif, monospace; font-size: 16px; font-weight: bold; margin: 0; padding: 5px; width: 100%; color: #000; }
+                                   .text-center { text-align: center; }
+                                   .text-right { text-align: right; }
+                                   .text-left { text-align: left; }
+                                   .bold { font-weight: 900; }
+                                   .header { margin-bottom: 10px; }
+                                   .store-name { font-size: 24px; font-weight: 900; margin-bottom: 5px; text-transform: uppercase; }
+                                   .address { font-size: 16px; margin-bottom: 5px; line-height: 1.2; font-weight: 600; }
+                                   .contact { font-size: 16px; font-weight: 900; margin-bottom: 15px; }
+                                   .meta-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+                                   .order-no { font-size: 22px; font-weight: 900; margin: 10px 0; text-align: center; }
+                                   .items-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                                   .items-table th { text-align: left; border-bottom: 2px solid #000; padding: 5px 0; font-size: 16px; font-weight: 900; }
+                                   .items-table td { padding: 5px 0; vertical-align: top; font-size: 16px; font-weight: bold; }
+                                   .dotted-line { border-bottom: 2px dashed #000; margin: 5px 0; }
+                                   .totals { margin-top: 10px; }
+                                   .total-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 16px; font-weight: bold; }
+                                   .grand-total { font-size: 20px; font-weight: 900; margin-top: 5px; }
+                                   .footer { margin-top: 20px; text-align: center; font-size: 10px; font-weight: bold; }
+                                   .page-break { page-break-before: always; border-top: 2px dashed #000; margin-top: 20px; padding-top: 20px; }
+                               `;
+
+                               const getCustomerHtml = () => `
+                                   <div class="header text-center">
+                                       <div class="store-name">ACHANAK FOODS</div>
+                                       <div class="address">H72M+H72, C Block Block C Gulshan-e-<br>Ravi, Lahore, Punjab 54000</div>
+                                       <div class="contact">Contact # 03236060340</div>
+                                   </div>
+                                   <div class="meta-row">
+                                       <div><span class="bold">Invoice #</span> ${finalOrderId.slice(-6).toUpperCase()}</div>
+                                       <div class="text-right">
+                                           <div style="font-size: 12px; color: #000000;">Punched By</div>
+                                           <div class="bold">Mr.Nadeem</div>
+                                       </div>
+                                   </div>
+                                   <div class="meta-row">
+                                       <div><span class="bold">Date:</span> ${date}</div>
+                                   </div>
+                                   <div class="order-no">Order # ${finalOrderId.slice(-4)}</div>
+                                   <div class="meta-row bold" style="margin-bottom: 15px;">
+                                        <div>Order Type:</div>
+                                        <div>${orderType === 'dine-in' ? `Dine In (${tableNo})` : 'TakeAway'}</div>
+                                   </div>
+                                   <table class="items-table">
+                                       <thead>
+                                           <tr>
+                                               <th style="width: 45%;">Product</th>
+                                               <th style="width: 15%; text-align: center;">Qty</th>
+                                               <th style="width: 20%; text-align: right;">Rate</th>
+                                               <th style="width: 20%; text-align: right;">Total</th>
+                                           </tr>
+                                       </thead>
+                                       <tbody>
+                                           ${cartSnapshot.map(item => `
+                                               <tr>
+                                                   <td class="item-name">${item.name}</td>
+                                                   <td style="text-align: center;">${item.quantity}</td>
+                                                   <td style="text-align: right;">${item.price.toFixed(2)}</td>
+                                                   <td style="text-align: right;">${(item.price * item.quantity).toFixed(2)}</td>
+                                               </tr>
+                                               <tr><td colspan="4" style="border-bottom: 1px solid #000;"></td></tr>
+                                           `).join('')}
+                                       </tbody>
+                                   </table>
+                                   <div class="totals">
+                                       <div class="dotted-line"></div>
+                                       <div class="total-row bold">
+                                           <span>Subtotal:</span>
+                                           <span>${subTotal.toFixed(2)}</span>
+                                       </div>
+                                       ${discountVal > 0 ? `
+                                           <div class="total-row" style="font-size: 11px;">
+                                                <span>Discount ${discountPercent ? `(${Number(discountPercent).toFixed(0)}%)` : ''}:</span>
+                                                <span>-${discountVal.toFixed(2)}</span>
+                                           </div>
+                                       ` : ''}
+                                       <div class="dotted-line"></div>
+                                       <div class="total-row grand-total">
+                                           <span>Grand Total:</span>
+                                           <span>${finalTotal}</span>
+                                       </div>
+                                       <div class="dotted-line"></div>
+                                   </div>
+                                   <div style="text-align: center; margin-top: 10px;">Thank you for your order!</div>
+                               `;
+
                                const receiptHtml = `
                                    <html>
-                                       <head>
-                                           <title>Print Receipt</title>
-                                           <style>
-                                               body { font-family: 'Courier New', monospace; font-size: 12px; margin: 0 auto; padding: 10px; width: 300px; color: #000; }
-                                               .text-center { text-align: center; }
-                                               .text-right { text-align: right; }
-                                               .text-left { text-align: left; }
-                                               .bold { font-weight: bold; }
-                                               .header { margin-bottom: 10px; }
-                                               .store-name { font-size: 18px; font-weight: bold; margin-bottom: 5px; }
-                                               .address { font-size: 10px; margin-bottom: 5px; line-height: 1.2; }
-                                               .contact { font-size: 12px; font-weight: bold; margin-bottom: 15px; }
-                                               
-                                               .meta-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
-                                               .order-no { font-size: 16px; font-weight: bold; margin: 10px 0; text-align: center; }
-                                               
-                                               .items-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-                                               .items-table th { text-align: left; border-bottom: 1px dotted #000; padding: 5px 0; font-size: 12px; }
-                                               .items-table td { padding: 5px 0; vertical-align: top; font-size: 12px; }
-                                               .item-name { padding-right: 5px; }
-                                               
-                                               .dotted-line { border-bottom: 1px dotted #000; margin: 5px 0; }
-                                               
-                                               .totals { margin-top: 10px; }
-                                               .total-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
-                                               .grand-total { font-size: 14px; font-weight: bold; margin-top: 5px; }
-                                               
-                                               .footer { margin-top: 20px; text-align: center; font-size: 10px; font-weight: bold; }
-                                           </style>
-                                       </head>
-                                       <body>
-                                           <div class="header text-center">
-                                               <div class="store-name">ACHANAK FOODS</div>
-                                               <div class="address">H72M+H72, C Block Block C Gulshan-e-<br>Ravi, Lahore, Punjab 54000</div>
-                                               <div class="contact">Contact # 03236060340</div>
-                                           </div>
-
-                                           <div class="meta-row">
-                                               <div><span class="bold">Invoice #</span> ${finalOrderId.slice(-6).toUpperCase()}</div>
-                                               <div class="text-right">
-                                                   <div style="font-size: 10px; color: #666;">Punched By</div>
-                                                   <div class="bold">Mr.Nadeem</div>
-                                               </div>
-                                           </div>
-                                           
-                                           <div class="meta-row">
-                                               <div><span class="bold">Date:</span> ${date}</div>
-                                           </div>
-
-                                           <div class="order-no">Order # ${finalOrderId.slice(-4)}</div>
-
-                                           <div class="meta-row bold" style="margin-bottom: 15px;">
-                                                <div>Order Type:</div>
-                                                <div>${orderType === 'dine-in' ? `Dine In (${tableNo})` : 'TakeAway'}</div>
-                                           </div>
-
-                                           <table class="items-table">
-                                               <thead>
-                                                   <tr>
-                                                       <th style="width: 45%;">Product</th>
-                                                       <th style="width: 15%; text-align: center;">Qty</th>
-                                                       <th style="width: 20%; text-align: right;">Rate</th>
-                                                       <th style="width: 20%; text-align: right;">Total</th>
-                                                   </tr>
-                                               </thead>
-                                               <tbody>
-                                                   ${cartSnapshot.map(item => `
-                                                       <tr>
-                                                           <td class="item-name">
-                                                               ${item.name}
-                                                               <div style="font-size: 10px; color: #666; display:none;">(Description if any)</div>
-                                                           </td>
-                                                           <td style="text-align: center;">${item.quantity}</td>
-                                                           <td style="text-align: right;">${item.price.toFixed(2)}</td>
-                                                           <td style="text-align: right;">${(item.price * item.quantity).toFixed(2)}</td>
-                                                       </tr>
-                                                       <tr>
-                                                            <td colspan="4" style="border-bottom: 1px solid #000;"></td>
-                                                       </tr>
-                                                   `).join('')}
-                                               </tbody>
-                                           </table>
-
-                                           <div class="totals">
-                                               <div class="dotted-line"></div>
-                                               <div class="total-row bold">
-                                                   <span>Subtotal:</span>
-                                                   <span>${subTotal.toFixed(2)}</span>
-                                               </div>
-                                               
-                                               ${discountVal > 0 ? `
-                                                   <div class="total-row" style="font-size: 11px;">
-                                                        <span>Discount ${discountPercent ? `(${Number(discountPercent).toFixed(0)}%)` : ''}:</span>
-                                                        <span>-${discountVal.toFixed(2)}</span>
-                                                   </div>
-                                               ` : ''}
-                                               
-                                               <div class="dotted-line"></div>
-                                               <div class="total-row grand-total">
-                                                   <span>Grand Total:</span>
-                                                   <span>${finalTotal}</span>
-                                               </div>
-                                               <div class="dotted-line"></div>
-                                           </div>
-
-                                           <script>
-                                               window.onload = function() { window.print(); window.close(); }
-                                           </script>
-                                       </body>
-                                   </html>
-                               `;
-                               if (win) {
-                                   win.document.body.innerHTML = ''; // Clear loading message
-                                   win.document.write(receiptHtml);
-                                   win.document.close();
-                               }
+                                       <head><title>Print Receipt</title><style>${css}</style></head>
+                                       <body>${getCustomerHtml()}<script>window.onload = function() { window.print(); window.close(); }</script></body>
+                                   </html>`;
                                
-                               if (orderId) {
-                                    router.push('/orders'); // Redirect if editing
-                               }
+                               if (win) { win.document.body.innerHTML = ''; win.document.write(receiptHtml); win.document.close(); }
+                               if (orderId) { router.push('/orders'); }
+                           }} 
+                           disabled={cart.length === 0}
+                           className="col-span-2 py-2 text-xs    bg-gray-800 text-white rounded-xl font-bold hover:bg-gray-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gray-200"
+                       >
+                           {orderId ? "Update & Print" : "Print Order"}
+                       </button>
+                       <button
+                           onClick={async () => {
+                               const cartSnapshot = [...cart];
+                               const subTotal = cartSnapshot.reduce((acc, i) => acc + (i.price * i.quantity), 0);
+                               const discountVal = Number(discountAmount) || 0;
+                               const finalTotal = Math.max(0, subTotal - discountVal).toFixed(2);
+                               const date = new Date().toLocaleString();
+                               
+                               const win = window.open('', '', 'width=400,height=600');
+                               if(win) win.document.write('<html><body><h3>Processing...</h3></body></html>');
+
+                               const savedOrder = await submitOrder(true, true);
+                               if (!savedOrder) { win?.close(); return; }
+                               setKitchenPrinted(true);
+                               
+                               const finalOrderId = savedOrder._id || orderId || 'New';
+
+                               const css = `
+                                   * { box-sizing: border-box; }
+                                   body { font-family: sans-serif, monospace; font-size: 16px; font-weight: bold; margin: 0; padding: 5px; width: 100%; color: #000; }
+                                   .text-center { text-align: center; }
+                                   .text-right { text-align: right; }
+                                   .text-left { text-align: left; }
+                                   .bold { font-weight: 900; }
+                                   .header { margin-bottom: 10px; }
+                                   .store-name { font-size: 24px; font-weight: 900; margin-bottom: 5px; text-transform: uppercase; }
+                                   .address { font-size: 16px; margin-bottom: 5px; line-height: 1.2; font-weight: 600; }
+                                   .contact { font-size: 16px; font-weight: 900; margin-bottom: 15px; }
+                                   .meta-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+                                   .order-no { font-size: 22px; font-weight: 900; margin: 10px 0; text-align: center; }
+                                   .items-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                                   .items-table th { text-align: left; border-bottom: 2px solid #000; padding: 5px 0; font-size: 16px; font-weight: 900; }
+                                   .items-table td { padding: 5px 0; vertical-align: top; font-size: 16px; font-weight: bold; }
+                                   .dotted-line { border-bottom: 2px dashed #000; margin: 5px 0; }
+                                   .totals { margin-top: 10px; }
+                                   .total-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 16px; font-weight: bold; }
+                                   .grand-total { font-size: 20px; font-weight: 900; margin-top: 5px; }
+                                   .footer { margin-top: 20px; text-align: center; font-size: 10px; font-weight: bold; }
+                                   .page-break { page-break-before: always; border-top: 2px dashed #000; margin-top: 20px; padding-top: 20px; }
+                               `;
+
+                               const getKitchenHtml = () => `
+                                   <div class="header text-center">
+                                       <div class="store-name">KITCHEN TOKEN</div>
+                                   </div>
+                                   <div class="meta-row">
+                                       <div><span class="bold">Date:</span> ${date}</div>
+                                   </div>
+                                   <div class="order-no">Order # ${finalOrderId.slice(-4)}</div>
+                                   <div class="meta-row bold" style="margin-bottom: 15px;">
+                                        <div>Order Type:</div>
+                                        <div>${orderType === 'dine-in' ? `Dine In (${tableNo})` : 'TakeAway'}</div>
+                                   </div>
+                                   <table class="items-table">
+                                       <thead>
+                                           <tr>
+                                               <th style="width: 80%;">Product</th>
+                                               <th style="width: 20%; text-align: center;">Qty</th>
+                                           </tr>
+                                       </thead>
+                                       <tbody>
+                                           ${cartSnapshot.map(item => `
+                                               <tr>
+                                                   <td class="item-name">${item.name}</td>
+                                                   <td style="text-align: center;">${item.quantity}</td>
+                                               </tr>
+                                               <tr><td colspan="2" style="border-bottom: 1px solid #000;"></td></tr>
+                                           `).join('')}
+                                       </tbody>
+                                   </table>
+                               `;
+
+                               const receiptHtml = `
+                                   <html>
+                                       <head><title>Kitchen Print</title><style>${css}</style></head>
+                                       <body>${getKitchenHtml()}<script>window.onload = function() { window.print(); window.close(); }</script></body>
+                                   </html>`;
+                               
+                               if (win) { win.document.body.innerHTML = ''; win.document.write(receiptHtml); win.document.close(); }
+                               if (orderId) { router.push('/orders'); }
+                           }} 
+                           disabled={cart.length === 0 || kitchenPrinted}
+                           className="col-span-1 py-2 text-xs bg-black text-white rounded-xl font-bold hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-gray-200"
+                       >
+                           {kitchenPrinted ? "Sent" : "Kitchen"}
+                       </button>
+                       <button
+                           onClick={async () => {
+                               const cartSnapshot = [...cart];
+                               const subTotal = cartSnapshot.reduce((acc, i) => acc + (i.price * i.quantity), 0);
+                               const discountVal = Number(discountAmount) || 0;
+                               const finalTotal = Math.max(0, subTotal - discountVal).toFixed(2);
+                               const date = new Date().toLocaleString();
+                               
+                               const win = window.open('', '', 'width=400,height=600');
+                               if(win) win.document.write('<html><body><h3>Processing...</h3></body></html>');
+
+                               const savedOrder = await submitOrder(true, true);
+                               if (!savedOrder) { win?.close(); return; }
+                               setKitchenPrinted(true);
+                               
+                               const finalOrderId = savedOrder._id || orderId || 'New';
+
+                               const css = `
+                                   * { box-sizing: border-box; }
+                                   body { font-family: sans-serif, monospace; font-size: 16px; font-weight: bold; margin: 0; padding: 5px; width: 100%; color: #000; }
+                                   .text-center { text-align: center; }
+                                   .text-right { text-align: right; }
+                                   .text-left { text-align: left; }
+                                   .bold { font-weight: 900; }
+                                   .header { margin-bottom: 10px; }
+                                   .store-name { font-size: 24px; font-weight: 900; margin-bottom: 5px; text-transform: uppercase; }
+                                   .address { font-size: 16px; margin-bottom: 5px; line-height: 1.2; font-weight: 600; }
+                                   .contact { font-size: 16px; font-weight: 900; margin-bottom: 15px; }
+                                   .meta-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+                                   .order-no { font-size: 22px; font-weight: 900; margin: 10px 0; text-align: center; }
+                                   .items-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                                   .items-table th { text-align: left; border-bottom: 2px solid #000; padding: 5px 0; font-size: 16px; font-weight: 900; }
+                                   .items-table td { padding: 5px 0; vertical-align: top; font-size: 16px; font-weight: bold; }
+                                   .dotted-line { border-bottom: 2px dashed #000; margin: 5px 0; }
+                                   .totals { margin-top: 10px; }
+                                   .total-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 16px; font-weight: bold; }
+                                   .grand-total { font-size: 20px; font-weight: 900; margin-top: 5px; }
+                                   .footer { margin-top: 20px; text-align: center; font-size: 10px; font-weight: bold; }
+                                   .page-break { page-break-before: always; border-top: 2px dashed #000; margin-top: 20px; padding-top: 20px; }
+                               `;
+
+                               const getKitchenHtml = () => `
+                                   <div class="header text-center">
+                                       <div class="store-name">KITCHEN TOKEN</div>
+                                   </div>
+                                   <div class="meta-row">
+                                       <div><span class="bold">Date:</span> ${date}</div>
+                                   </div>
+                                   <div class="order-no">Order # ${finalOrderId.slice(-4)}</div>
+                                   <div class="meta-row bold" style="margin-bottom: 15px;">
+                                        <div>Order Type:</div>
+                                        <div>${orderType === 'dine-in' ? `Dine In (${tableNo})` : 'TakeAway'}</div>
+                                   </div>
+                                   <table class="items-table">
+                                       <thead>
+                                           <tr>
+                                               <th style="width: 80%;">Product</th>
+                                               <th style="width: 20%; text-align: center;">Qty</th>
+                                           </tr>
+                                       </thead>
+                                       <tbody>
+                                           ${cartSnapshot.map(item => `
+                                               <tr>
+                                                   <td class="item-name">${item.name}</td>
+                                                   <td style="text-align: center;">${item.quantity}</td>
+                                               </tr>
+                                               <tr><td colspan="2" style="border-bottom: 1px solid #000;"></td></tr>
+                                           `).join('')}
+                                       </tbody>
+                                   </table>
+                               `;
+
+                               const getCustomerHtml = () => `
+                                   <div class="header text-center">
+                                       <div class="store-name">ACHANAK FOODS</div>
+                                       <div class="address">H72M+H72, C Block Block C Gulshan-e-<br>Ravi, Lahore, Punjab 54000</div>
+                                       <div class="contact">Contact # 03236060340</div>
+                                   </div>
+                                   <div class="meta-row">
+                                       <div><span class="bold">Invoice #</span> ${finalOrderId.slice(-6).toUpperCase()}</div>
+                                       <div class="text-right">
+                                           <div style="font-size: 12px; color: #000000;">Punched By</div>
+                                           <div class="bold">Mr.Nadeem</div>
+                                       </div>
+                                   </div>
+                                   <div class="meta-row">
+                                       <div><span class="bold">Date:</span> ${date}</div>
+                                   </div>
+                                   <div class="order-no">Order # ${finalOrderId.slice(-4)}</div>
+                                   <div class="meta-row bold" style="margin-bottom: 15px;">
+                                        <div>Order Type:</div>
+                                        <div>${orderType === 'dine-in' ? `Dine In (${tableNo})` : 'TakeAway'}</div>
+                                   </div>
+                                   <table class="items-table">
+                                       <thead>
+                                           <tr>
+                                               <th style="width: 45%;">Product</th>
+                                               <th style="width: 15%; text-align: center;">Qty</th>
+                                               <th style="width: 20%; text-align: right;">Rate</th>
+                                               <th style="width: 20%; text-align: right;">Total</th>
+                                           </tr>
+                                       </thead>
+                                       <tbody>
+                                           ${cartSnapshot.map(item => `
+                                               <tr>
+                                                   <td class="item-name">${item.name}</td>
+                                                   <td style="text-align: center;">${item.quantity}</td>
+                                                   <td style="text-align: right;">${item.price.toFixed(2)}</td>
+                                                   <td style="text-align: right;">${(item.price * item.quantity).toFixed(2)}</td>
+                                               </tr>
+                                               <tr><td colspan="4" style="border-bottom: 1px solid #000;"></td></tr>
+                                           `).join('')}
+                                       </tbody>
+                                   </table>
+                                   <div class="totals">
+                                       <div class="dotted-line"></div>
+                                       <div class="total-row bold">
+                                           <span>Subtotal:</span>
+                                           <span>${subTotal.toFixed(2)}</span>
+                                       </div>
+                                       ${discountVal > 0 ? `
+                                           <div class="total-row" style="font-size: 11px;">
+                                                <span>Discount ${discountPercent ? `(${Number(discountPercent).toFixed(0)}%)` : ''}:</span>
+                                                <span>-${discountVal.toFixed(2)}</span>
+                                           </div>
+                                       ` : ''}
+                                       <div class="dotted-line"></div>
+                                       <div class="total-row grand-total">
+                                           <span>Grand Total:</span>
+                                           <span>${finalTotal}</span>
+                                       </div>
+                                       <div class="dotted-line"></div>
+                                   </div>
+                                   <div style="text-align: center; margin-top: 10px;">Thank you for your order!</div>
+                               `;
+
+                               const receiptHtml = `
+                                   <html>
+                                       <head><title>Print Receipt</title><style>${css}</style></head>
+                                       <body>
+                                           ${getCustomerHtml()}
+                                           ${!kitchenPrinted ? `
+                                               <div class="page-break"></div>
+                                               ${getKitchenHtml()}
+                                           ` : ''}
+                                           <script>window.onload = function() { window.print(); window.close(); }</script>
+                                       </body>
+                                   </html>`;
+
+                               if (win) { win.document.body.innerHTML = ''; win.document.write(receiptHtml); win.document.close(); }
+                               if (orderId) { router.push('/orders'); }
                            }}
                            disabled={cart.length === 0}
                            className="col-span-2 py-2 text-sm bg-gray-100 text-gray-900 rounded-xl font-bold hover:bg-gray-200 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex  items-center justify-center gap-0.5 border border-gray-200"
                        >
                            <span className="text-lg">🖨️</span>
-                           <span className="text-[10px] uppercase tracking-wide">{orderId ? "Update & Print" : "Place & Print"}</span>
+                           <span className="text-[10px] uppercase tracking-wide">{orderId ? "Both" : "Both"}</span>
                        </button>
                    </div>
                </div>
