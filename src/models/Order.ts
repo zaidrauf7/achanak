@@ -23,6 +23,7 @@ const OrderSchema = new Schema({
     default: "take-away"
   },
   createdBy: { type: String }, // Clerk ID of manager
+  kitchenPrinted: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
 });
 
