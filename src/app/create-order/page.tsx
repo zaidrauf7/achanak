@@ -94,6 +94,10 @@ const CreateOrderContent = () => {
                 console.error(err);
                 alert("Failed to load order for editing");
             });
+    } else {
+        // Reset for new order
+        setCart([]);
+        setTableNo(tableParam || "");
     }
   }, [orderId, tableParam]);
 
@@ -185,6 +189,7 @@ const CreateOrderContent = () => {
              setTableNo("");
              setDiscountPercent("");
              setDiscountAmount("");
+             setKitchenPrinted(false);
              // Refresh active tables
              refreshActiveTables();
              return data;
@@ -193,6 +198,7 @@ const CreateOrderContent = () => {
          setCart([]);
          setDiscountPercent("");
          setDiscountAmount("");
+         setKitchenPrinted(false);
          if (orderId) {
              router.push('/orders');
          } else {
@@ -522,26 +528,26 @@ const CreateOrderContent = () => {
 
                                const css = `
                                    * { box-sizing: border-box; }
-                                   body { font-family: sans-serif, monospace; font-size: 16px; font-weight: bold; margin: 0; padding: 5px; width: 100%; color: #000; }
+                                   body { font-family: sans-serif, monospace; font-size: 15px; font-weight: bold; margin: 0; padding: 2px; width: 100%; color: #000; }
                                    .text-center { text-align: center; }
                                    .text-right { text-align: right; }
                                    .text-left { text-align: left; }
                                    .bold { font-weight: 900; }
-                                   .header { margin-bottom: 10px; }
-                                   .store-name { font-size: 24px; font-weight: 900; margin-bottom: 5px; text-transform: uppercase; }
-                                   .address { font-size: 16px; margin-bottom: 5px; line-height: 1.2; font-weight: 600; }
-                                   .contact { font-size: 16px; font-weight: 900; margin-bottom: 15px; }
-                                   .meta-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
-                                   .order-no { font-size: 22px; font-weight: 900; margin: 10px 0; text-align: center; }
-                                   .items-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-                                   .items-table th { text-align: left; border-bottom: 2px solid #000; padding: 5px 0; font-size: 16px; font-weight: 900; }
-                                   .items-table td { padding: 5px 0; vertical-align: top; font-size: 16px; font-weight: bold; }
-                                   .dotted-line { border-bottom: 2px dashed #000; margin: 5px 0; }
-                                   .totals { margin-top: 10px; }
-                                   .total-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 16px; font-weight: bold; }
-                                   .grand-total { font-size: 20px; font-weight: 900; margin-top: 5px; }
-                                   .footer { margin-top: 20px; text-align: center; font-size: 10px; font-weight: bold; }
-                                   .page-break { page-break-before: always; border-top: 2px dashed #000; margin-top: 20px; padding-top: 20px; }
+                                   .header { margin-bottom: 5px; }
+                                   .store-name { font-size: 21px; font-weight: 900; margin-bottom: 3px; text-transform: uppercase; }
+                                   .address { font-size: 13px; margin-bottom: 3px; line-height: 1.1; font-weight: 600; }
+                                   .contact { font-size: 13px; font-weight: 900; margin-bottom: 10px; }
+                                   .meta-row { display: flex; justify-content: space-between; margin-bottom: 3px; }
+                                   .order-no { font-size: 18px; font-weight: 900; margin: 5px 0; text-align: center; }
+                                   .items-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+                                   .items-table th { text-align: left; border-bottom: 1px solid #000; padding: 2px 0; font-size: 13px; font-weight: 900; }
+                                   .items-table td { padding: 3px 0; vertical-align: top; font-size: 13px; font-weight: bold; }
+                                   .dotted-line { border-bottom: 1px dashed #000; margin: 3px 0; }
+                                   .totals { margin-top: 5px; }
+                                   .total-row { display: flex; justify-content: space-between; margin-bottom: 2px; font-size: 14px; font-weight: bold; }
+                                   .grand-total { font-size: 17px; font-weight: 900; margin-top: 3px; }
+                                   .footer { margin-top: 15px; text-align: center; font-size: 10px; font-weight: bold; }
+                                   .page-break { page-break-before: always; border-top: 1px dashed #000; margin-top: 15px; padding-top: 10px; }
                                `;
 
                                const getCustomerHtml = () => `
@@ -635,32 +641,32 @@ const CreateOrderContent = () => {
 
                                const savedOrder = await submitOrder(true, true);
                                if (!savedOrder) { win?.close(); return; }
-                               setKitchenPrinted(true);
+                               // State is reset inside submitOrder for new session
                                
                                const finalOrderId = savedOrder._id || orderId || 'New';
 
                                const css = `
                                    * { box-sizing: border-box; }
-                                   body { font-family: sans-serif, monospace; font-size: 16px; font-weight: bold; margin: 0; padding: 5px; width: 100%; color: #000; }
+                                   body { font-family: sans-serif, monospace; font-size: 15px; font-weight: bold; margin: 0; padding: 2px; width: 100%; color: #000; }
                                    .text-center { text-align: center; }
                                    .text-right { text-align: right; }
                                    .text-left { text-align: left; }
                                    .bold { font-weight: 900; }
-                                   .header { margin-bottom: 10px; }
-                                   .store-name { font-size: 24px; font-weight: 900; margin-bottom: 5px; text-transform: uppercase; }
-                                   .address { font-size: 16px; margin-bottom: 5px; line-height: 1.2; font-weight: 600; }
-                                   .contact { font-size: 16px; font-weight: 900; margin-bottom: 15px; }
-                                   .meta-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
-                                   .order-no { font-size: 22px; font-weight: 900; margin: 10px 0; text-align: center; }
-                                   .items-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-                                   .items-table th { text-align: left; border-bottom: 2px solid #000; padding: 5px 0; font-size: 16px; font-weight: 900; }
-                                   .items-table td { padding: 5px 0; vertical-align: top; font-size: 16px; font-weight: bold; }
-                                   .dotted-line { border-bottom: 2px dashed #000; margin: 5px 0; }
-                                   .totals { margin-top: 10px; }
-                                   .total-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 16px; font-weight: bold; }
-                                   .grand-total { font-size: 20px; font-weight: 900; margin-top: 5px; }
-                                   .footer { margin-top: 20px; text-align: center; font-size: 10px; font-weight: bold; }
-                                   .page-break { page-break-before: always; border-top: 2px dashed #000; margin-top: 20px; padding-top: 20px; }
+                                   .header { margin-bottom: 5px; }
+                                   .store-name { font-size: 21px; font-weight: 900; margin-bottom: 3px; text-transform: uppercase; }
+                                   .address { font-size: 13px; margin-bottom: 3px; line-height: 1.1; font-weight: 600; }
+                                   .contact { font-size: 13px; font-weight: 900; margin-bottom: 10px; }
+                                   .meta-row { display: flex; justify-content: space-between; margin-bottom: 3px; }
+                                   .order-no { font-size: 18px; font-weight: 900; margin: 5px 0; text-align: center; }
+                                   .items-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+                                   .items-table th { text-align: left; border-bottom: 1px solid #000; padding: 2px 0; font-size: 13px; font-weight: 900; }
+                                   .items-table td { padding: 3px 0; vertical-align: top; font-size: 13px; font-weight: bold; }
+                                   .dotted-line { border-bottom: 1px dashed #000; margin: 3px 0; }
+                                   .totals { margin-top: 5px; }
+                                   .total-row { display: flex; justify-content: space-between; margin-bottom: 2px; font-size: 14px; font-weight: bold; }
+                                   .grand-total { font-size: 17px; font-weight: 900; margin-top: 3px; }
+                                   .footer { margin-top: 15px; text-align: center; font-size: 10px; font-weight: bold; }
+                                   .page-break { page-break-before: always; border-top: 1px dashed #000; margin-top: 15px; padding-top: 10px; }
                                `;
 
                                const getKitchenHtml = () => `
@@ -721,32 +727,31 @@ const CreateOrderContent = () => {
 
                                const savedOrder = await submitOrder(true, true);
                                if (!savedOrder) { win?.close(); return; }
-                               setKitchenPrinted(true);
                                
                                const finalOrderId = savedOrder._id || orderId || 'New';
 
                                const css = `
                                    * { box-sizing: border-box; }
-                                   body { font-family: sans-serif, monospace; font-size: 16px; font-weight: bold; margin: 0; padding: 5px; width: 100%; color: #000; }
+                                   body { font-family: sans-serif, monospace; font-size: 15px; font-weight: bold; margin: 0; padding: 2px; width: 100%; color: #000; }
                                    .text-center { text-align: center; }
                                    .text-right { text-align: right; }
                                    .text-left { text-align: left; }
                                    .bold { font-weight: 900; }
-                                   .header { margin-bottom: 10px; }
-                                   .store-name { font-size: 24px; font-weight: 900; margin-bottom: 5px; text-transform: uppercase; }
-                                   .address { font-size: 16px; margin-bottom: 5px; line-height: 1.2; font-weight: 600; }
-                                   .contact { font-size: 16px; font-weight: 900; margin-bottom: 15px; }
-                                   .meta-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
-                                   .order-no { font-size: 22px; font-weight: 900; margin: 10px 0; text-align: center; }
-                                   .items-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-                                   .items-table th { text-align: left; border-bottom: 2px solid #000; padding: 5px 0; font-size: 16px; font-weight: 900; }
-                                   .items-table td { padding: 5px 0; vertical-align: top; font-size: 16px; font-weight: bold; }
-                                   .dotted-line { border-bottom: 2px dashed #000; margin: 5px 0; }
-                                   .totals { margin-top: 10px; }
-                                   .total-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 16px; font-weight: bold; }
-                                   .grand-total { font-size: 20px; font-weight: 900; margin-top: 5px; }
-                                   .footer { margin-top: 20px; text-align: center; font-size: 10px; font-weight: bold; }
-                                   .page-break { page-break-before: always; border-top: 2px dashed #000; margin-top: 20px; padding-top: 20px; }
+                                   .header { margin-bottom: 5px; }
+                                   .store-name { font-size: 21px; font-weight: 900; margin-bottom: 3px; text-transform: uppercase; }
+                                   .address { font-size: 13px; margin-bottom: 3px; line-height: 1.1; font-weight: 600; }
+                                   .contact { font-size: 13px; font-weight: 900; margin-bottom: 10px; }
+                                   .meta-row { display: flex; justify-content: space-between; margin-bottom: 3px; }
+                                   .order-no { font-size: 18px; font-weight: 900; margin: 5px 0; text-align: center; }
+                                   .items-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+                                   .items-table th { text-align: left; border-bottom: 1px solid #000; padding: 2px 0; font-size: 13px; font-weight: 900; }
+                                   .items-table td { padding: 3px 0; vertical-align: top; font-size: 13px; font-weight: bold; }
+                                   .dotted-line { border-bottom: 1px dashed #000; margin: 3px 0; }
+                                   .totals { margin-top: 5px; }
+                                   .total-row { display: flex; justify-content: space-between; margin-bottom: 2px; font-size: 14px; font-weight: bold; }
+                                   .grand-total { font-size: 17px; font-weight: 900; margin-top: 3px; }
+                                   .footer { margin-top: 15px; text-align: center; font-size: 10px; font-weight: bold; }
+                                   .page-break { page-break-before: always; border-top: 1px dashed #000; margin-top: 15px; padding-top: 10px; }
                                `;
 
                                const getKitchenHtml = () => `
