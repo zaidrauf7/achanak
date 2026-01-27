@@ -528,25 +528,25 @@ const CreateOrderContent = () => {
 
                                const css = `
                                    * { box-sizing: border-box; }
-                                   body { font-family: sans-serif, monospace; font-size: 15px; font-weight: bold; margin: 0; padding: 2px; width: 100%; color: #000; }
+                                   body { font-family: sans-serif, monospace; font-size: 13px; font-weight: bold; margin: 0; padding: 2px; width: 100%; color: #000; }
                                    .text-center { text-align: center; }
                                    .text-right { text-align: right; }
                                    .text-left { text-align: left; }
                                    .bold { font-weight: 900; }
                                    .header { margin-bottom: 5px; }
-                                   .store-name { font-size: 21px; font-weight: 900; margin-bottom: 3px; text-transform: uppercase; }
-                                   .address { font-size: 13px; margin-bottom: 3px; line-height: 1.1; font-weight: 600; }
-                                   .contact { font-size: 13px; font-weight: 900; margin-bottom: 10px; }
+                                   .store-name { font-size: 19px; font-weight: 900; margin-bottom: 3px; text-transform: uppercase; }
+                                   .address { font-size: 9px; margin-bottom: 3px; line-height: 1.1; font-weight: 600; }
+                                   .contact { font-size: 9px; font-weight: 900; margin-bottom: 10px; }
                                    .meta-row { display: flex; justify-content: space-between; margin-bottom: 3px; }
-                                   .order-no { font-size: 18px; font-weight: 900; margin: 5px 0; text-align: center; }
+                                   .order-no { font-size: 16px; font-weight: 900; margin: 5px 0; text-align: center; }
                                    .items-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
-                                   .items-table th { text-align: left; border-bottom: 1px solid #000; padding: 2px 0; font-size: 13px; font-weight: 900; }
-                                   .items-table td { padding: 3px 0; vertical-align: top; font-size: 13px; font-weight: bold; }
+                                   .items-table th { text-align: left; border-bottom: 1px solid #000; padding: 2px 0; font-size: 9px; font-weight: 900; }
+                                   .items-table td { padding: 3px 0; vertical-align: top; font-size: 9px; font-weight: bold; }
                                    .dotted-line { border-bottom: 1px dashed #000; margin: 3px 0; }
                                    .totals { margin-top: 5px; }
-                                   .total-row { display: flex; justify-content: space-between; margin-bottom: 2px; font-size: 14px; font-weight: bold; }
-                                   .grand-total { font-size: 17px; font-weight: 900; margin-top: 3px; }
-                                   .footer { margin-top: 15px; text-align: center; font-size: 10px; font-weight: bold; }
+                                   .total-row { display: flex; justify-content: space-between; margin-bottom: 2px; font-size: 10px; font-weight: bold; }
+                                   .grand-total { font-size: 15px; font-weight: 900; margin-top: 3px; }
+                                   .footer { margin-top: 15px; text-align: center; font-size: 8px; font-weight: bold; }
                                    .page-break { page-break-before: always; border-top: 1px dashed #000; margin-top: 15px; padding-top: 10px; }
                                `;
 
@@ -559,7 +559,7 @@ const CreateOrderContent = () => {
                                    <div class="meta-row">
                                        <div><span class="bold">Invoice #</span> ${finalOrderId.slice(-6).toUpperCase()}</div>
                                        <div class="text-right">
-                                           <div style="font-size: 12px; color: #000000;">Punched By</div>
+                                           <div style="font-size: 10px; color: #000000;">Punched By</div>
                                            <div class="bold">Mr.Nadeem</div>
                                        </div>
                                    </div>
@@ -599,7 +599,7 @@ const CreateOrderContent = () => {
                                            <span>${subTotal.toFixed(2)}</span>
                                        </div>
                                        ${discountVal > 0 ? `
-                                           <div class="total-row" style="font-size: 11px;">
+                                           <div class="total-row" style="font-size: 9px;">
                                                 <span>Discount ${discountPercent ? `(${Number(discountPercent).toFixed(0)}%)` : ''}:</span>
                                                 <span>-${discountVal.toFixed(2)}</span>
                                            </div>
@@ -646,27 +646,27 @@ const CreateOrderContent = () => {
                                const finalOrderId = savedOrder._id || orderId || 'New';
 
                                const css = `
-                                   * { box-sizing: border-box; }
-                                   body { font-family: sans-serif, monospace; font-size: 15px; font-weight: bold; margin: 0; padding: 2px; width: 100%; color: #000; }
-                                   .text-center { text-align: center; }
-                                   .text-right { text-align: right; }
-                                   .text-left { text-align: left; }
-                                   .bold { font-weight: 900; }
-                                   .header { margin-bottom: 5px; }
-                                   .store-name { font-size: 21px; font-weight: 900; margin-bottom: 3px; text-transform: uppercase; }
-                                   .address { font-size: 13px; margin-bottom: 3px; line-height: 1.1; font-weight: 600; }
-                                   .contact { font-size: 13px; font-weight: 900; margin-bottom: 10px; }
-                                   .meta-row { display: flex; justify-content: space-between; margin-bottom: 3px; }
-                                   .order-no { font-size: 18px; font-weight: 900; margin: 5px 0; text-align: center; }
-                                   .items-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
-                                   .items-table th { text-align: left; border-bottom: 1px solid #000; padding: 2px 0; font-size: 13px; font-weight: 900; }
-                                   .items-table td { padding: 3px 0; vertical-align: top; font-size: 13px; font-weight: bold; }
-                                   .dotted-line { border-bottom: 1px dashed #000; margin: 3px 0; }
-                                   .totals { margin-top: 5px; }
-                                   .total-row { display: flex; justify-content: space-between; margin-bottom: 2px; font-size: 14px; font-weight: bold; }
-                                   .grand-total { font-size: 17px; font-weight: 900; margin-top: 3px; }
-                                   .footer { margin-top: 15px; text-align: center; font-size: 10px; font-weight: bold; }
-                                   .page-break { page-break-before: always; border-top: 1px dashed #000; margin-top: 15px; padding-top: 10px; }
+                                    * { box-sizing: border-box; }
+                                    body { font-family: sans-serif, monospace; font-size: 13px; font-weight: bold; margin: 0; padding: 2px; width: 100%; color: #000; }
+                                    .text-center { text-align: center; }
+                                    .text-right { text-align: right; }
+                                    .text-left { text-align: left; }
+                                    .bold { font-weight: 900; }
+                                    .header { margin-bottom: 5px; }
+                                    .store-name { font-size: 19px; font-weight: 900; margin-bottom: 3px; text-transform: uppercase; }
+                                    .address { font-size: 9px; margin-bottom: 3px; line-height: 1.1; font-weight: 600; }
+                                    .contact { font-size: 9px; font-weight: 900; margin-bottom: 10px; }
+                                    .meta-row { display: flex; justify-content: space-between; margin-bottom: 3px; }
+                                    .order-no { font-size: 16px; font-weight: 900; margin: 5px 0; text-align: center; }
+                                    .items-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+                                    .items-table th { text-align: left; border-bottom: 1px solid #000; padding: 2px 0; font-size: 9px; font-weight: 900; }
+                                    .items-table td { padding: 3px 0; vertical-align: top; font-size: 9px; font-weight: bold; }
+                                    .dotted-line { border-bottom: 1px dashed #000; margin: 3px 0; }
+                                    .totals { margin-top: 5px; }
+                                    .total-row { display: flex; justify-content: space-between; margin-bottom: 2px; font-size: 10px; font-weight: bold; }
+                                    .grand-total { font-size: 15px; font-weight: 900; margin-top: 3px; }
+                                    .footer { margin-top: 15px; text-align: center; font-size: 8px; font-weight: bold; }
+                                    .page-break { page-break-before: always; border-top: 1px dashed #000; margin-top: 15px; padding-top: 10px; }
                                `;
 
                                const getKitchenHtml = () => `
@@ -732,25 +732,25 @@ const CreateOrderContent = () => {
 
                                const css = `
                                    * { box-sizing: border-box; }
-                                   body { font-family: sans-serif, monospace; font-size: 15px; font-weight: bold; margin: 0; padding: 2px; width: 100%; color: #000; }
+                                   body { font-family: sans-serif, monospace; font-size: 13px; font-weight: bold; margin: 0; padding: 2px; width: 100%; color: #000; }
                                    .text-center { text-align: center; }
                                    .text-right { text-align: right; }
                                    .text-left { text-align: left; }
                                    .bold { font-weight: 900; }
                                    .header { margin-bottom: 5px; }
-                                   .store-name { font-size: 21px; font-weight: 900; margin-bottom: 3px; text-transform: uppercase; }
-                                   .address { font-size: 13px; margin-bottom: 3px; line-height: 1.1; font-weight: 600; }
-                                   .contact { font-size: 13px; font-weight: 900; margin-bottom: 10px; }
+                                   .store-name { font-size: 19px; font-weight: 900; margin-bottom: 3px; text-transform: uppercase; }
+                                   .address { font-size: 9px; margin-bottom: 3px; line-height: 1.1; font-weight: 600; }
+                                   .contact { font-size: 9px; font-weight: 900; margin-bottom: 10px; }
                                    .meta-row { display: flex; justify-content: space-between; margin-bottom: 3px; }
-                                   .order-no { font-size: 18px; font-weight: 900; margin: 5px 0; text-align: center; }
+                                   .order-no { font-size: 16px; font-weight: 900; margin: 5px 0; text-align: center; }
                                    .items-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
-                                   .items-table th { text-align: left; border-bottom: 1px solid #000; padding: 2px 0; font-size: 13px; font-weight: 900; }
-                                   .items-table td { padding: 3px 0; vertical-align: top; font-size: 13px; font-weight: bold; }
+                                   .items-table th { text-align: left; border-bottom: 1px solid #000; padding: 2px 0; font-size: 9px; font-weight: 900; }
+                                   .items-table td { padding: 3px 0; vertical-align: top; font-size: 9px; font-weight: bold; }
                                    .dotted-line { border-bottom: 1px dashed #000; margin: 3px 0; }
                                    .totals { margin-top: 5px; }
-                                   .total-row { display: flex; justify-content: space-between; margin-bottom: 2px; font-size: 14px; font-weight: bold; }
-                                   .grand-total { font-size: 17px; font-weight: 900; margin-top: 3px; }
-                                   .footer { margin-top: 15px; text-align: center; font-size: 10px; font-weight: bold; }
+                                   .total-row { display: flex; justify-content: space-between; margin-bottom: 2px; font-size: 10px; font-weight: bold; }
+                                   .grand-total { font-size: 15px; font-weight: 900; margin-top: 3px; }
+                                   .footer { margin-top: 15px; text-align: center; font-size: 8px; font-weight: bold; }
                                    .page-break { page-break-before: always; border-top: 1px dashed #000; margin-top: 15px; padding-top: 10px; }
                                `;
 
@@ -794,7 +794,7 @@ const CreateOrderContent = () => {
                                    <div class="meta-row">
                                        <div><span class="bold">Invoice #</span> ${finalOrderId.slice(-6).toUpperCase()}</div>
                                        <div class="text-right">
-                                           <div style="font-size: 12px; color: #000000;">Punched By</div>
+                                           <div style="font-size: 10px; color: #000000;">Punched By</div>
                                            <div class="bold">Mr.Nadeem</div>
                                        </div>
                                    </div>
@@ -834,7 +834,7 @@ const CreateOrderContent = () => {
                                            <span>${subTotal.toFixed(2)}</span>
                                        </div>
                                        ${discountVal > 0 ? `
-                                           <div class="total-row" style="font-size: 11px;">
+                                           <div class="total-row" style="font-size: 9px;">
                                                 <span>Discount ${discountPercent ? `(${Number(discountPercent).toFixed(0)}%)` : ''}:</span>
                                                 <span>-${discountVal.toFixed(2)}</span>
                                            </div>
