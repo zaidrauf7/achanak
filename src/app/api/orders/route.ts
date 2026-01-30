@@ -67,9 +67,28 @@ export async function POST(req: Request) {
   await connectDB();
   try {
     const body = await req.json();
-    const newOrder = await Order.create(body);
+
+    // Calculate order number for today
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const lastOrderToday = await Order.findOne({
+      createdAt: { $gte: startOfToday },
+      orderNumber: { $exists: true }
+    }).sort({ orderNumber: -1 });
+
+    const orderNumber = lastOrderToday && lastOrderToday.orderNumber 
+      ? lastOrderToday.orderNumber + 1 
+      : 1;
+
+    const newOrder = await Order.create({
+      ...body,
+      orderNumber
+    });
+
     return NextResponse.json(newOrder, { status: 201 });
   } catch (error) {
+    console.error("Order creation error:", error);
     return NextResponse.json({ error: "Failed to create order" }, { status: 500 });
   }
 }
