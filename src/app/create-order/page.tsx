@@ -246,7 +246,7 @@ const CreateOrderContent = () => {
         const cat = item.category ? item.category.trim() : "";
         if (cat === "Dessert") return "Zarda";
         if (cat === "Biryani") return "Chicken Biryani";
-        if (cat === "Daal") return "Daal Chawal";
+
         if (cat === "Pulao") return "Chicken Pulao";
         if (cat === "Sides") return "Raita + Salad";
         return cat;
@@ -259,7 +259,7 @@ const CreateOrderContent = () => {
                               item.category === filter || 
                               (filter === "Zarda" && item.category === "Dessert") ||
                               (filter === "Chicken Biryani" && item.category === "Biryani") ||
-                              (filter === "Daal Chawal" && item.category === "Daal") ||
+
                               (filter === "Chicken Pulao" && item.category === "Pulao") ||
                               (filter === "Raita + Salad" && item.category === "Sides");
       return matchesSearch && matchesCategory;
