@@ -17,6 +17,7 @@ interface Order {
     totalAmount: number;
     status: string;
     orderType?: string;
+    orderNumber?: number;
     createdAt: string;
 }
 
@@ -187,7 +188,12 @@ export default function OrdersPage() {
                                 {orders.map((order) => (
                                     <tr key={order._id} className="hover:bg-gray-50 transition-colors group">
                                         <td className="px-6 py-4">
-                                            <span className="font-bold text-gray-900">#{order._id.slice(-4)}</span>
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-gray-900">#{order.orderNumber}</span>
+                                                <span className="text-[10px] text-gray-400 font-mono">
+                                                    {new Date(order.createdAt).toISOString().slice(0, 10).replace(/-/g, '')}-{order.orderNumber}
+                                                </span>
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
                                             <div className="flex flex-col">

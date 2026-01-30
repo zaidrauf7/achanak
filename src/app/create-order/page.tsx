@@ -557,7 +557,7 @@ const CreateOrderContent = () => {
                                        <div class="contact">Contact # 03236060340</div>
                                    </div>
                                    <div class="meta-row">
-                                       <div><span class="bold">Invoice #</span> ${finalOrderId.slice(-6).toUpperCase()}</div>
+                                       <div><span class="bold">Invoice #</span> ${new Date(savedOrder.createdAt).toISOString().slice(0, 10).replace(/-/g, '')}-${savedOrder.orderNumber}</div>
                                        <div class="text-right">
                                            <div style="font-size: 10px; color: #000000;">Punched By</div>
                                            <div class="bold">Mr.Nadeem</div>
@@ -566,7 +566,7 @@ const CreateOrderContent = () => {
                                    <div class="meta-row">
                                        <div><span class="bold">Date:</span> ${date}</div>
                                    </div>
-                                   <div class="order-no">Order # ${finalOrderId.slice(-4)}</div>
+                                   <div class="order-no">Order # ${savedOrder.orderNumber || finalOrderId.slice(-4)}</div>
                                    <div class="meta-row bold" style="margin-bottom: 15px;">
                                         <div>Order Type:</div>
                                         <div>${orderType === 'dine-in' ? `Dine In (${tableNo})` : 'TakeAway'}</div>
@@ -676,7 +676,7 @@ const CreateOrderContent = () => {
                                    <div class="meta-row">
                                        <div><span class="bold">Date:</span> ${date}</div>
                                    </div>
-                                   <div class="order-no">Order # ${finalOrderId.slice(-4)}</div>
+                                   <div class="order-no">Order # ${savedOrder.orderNumber || finalOrderId.slice(-4)}</div>
                                    <div class="meta-row bold" style="margin-bottom: 15px;">
                                         <div>Order Type:</div>
                                         <div>${orderType === 'dine-in' ? `Dine In (${tableNo})` : 'TakeAway'}</div>
@@ -761,7 +761,7 @@ const CreateOrderContent = () => {
                                    <div class="meta-row">
                                        <div><span class="bold">Date:</span> ${date}</div>
                                    </div>
-                                   <div class="order-no">Order # ${finalOrderId.slice(-4)}</div>
+                                   <div class="order-no">Order # ${savedOrder.orderNumber || finalOrderId.slice(-4)}</div>
                                    <div class="meta-row bold" style="margin-bottom: 15px;">
                                         <div>Order Type:</div>
                                         <div>${orderType === 'dine-in' ? `Dine In (${tableNo})` : 'TakeAway'}</div>
@@ -792,7 +792,7 @@ const CreateOrderContent = () => {
                                        <div class="contact">Contact # 03236060340</div>
                                    </div>
                                    <div class="meta-row">
-                                       <div><span class="bold">Invoice #</span> ${finalOrderId.slice(-6).toUpperCase()}</div>
+                                       <div><span class="bold">Invoice #</span> ${new Date(savedOrder.createdAt).toISOString().slice(0, 10).replace(/-/g, '')}-${savedOrder.orderNumber}</div>
                                        <div class="text-right">
                                            <div style="font-size: 10px; color: #000000;">Punched By</div>
                                            <div class="bold">Mr.Nadeem</div>
@@ -801,7 +801,7 @@ const CreateOrderContent = () => {
                                    <div class="meta-row">
                                        <div><span class="bold">Date:</span> ${date}</div>
                                    </div>
-                                   <div class="order-no">Order # ${finalOrderId.slice(-4)}</div>
+                                   <div class="order-no">Order # ${savedOrder.orderNumber || finalOrderId.slice(-4)}</div>
                                    <div class="meta-row bold" style="margin-bottom: 15px;">
                                         <div>Order Type:</div>
                                         <div>${orderType === 'dine-in' ? `Dine In (${tableNo})` : 'TakeAway'}</div>
