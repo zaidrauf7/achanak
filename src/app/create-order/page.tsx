@@ -588,7 +588,7 @@ const CreateOrderContent = () => {
                                                    <td style="text-align: right;">${item.price.toFixed(2)}</td>
                                                    <td style="text-align: right;">${(item.price * item.quantity).toFixed(2)}</td>
                                                </tr>
-                                               <tr><td colspan="4" style="border-bottom: 1px solid #000;"></td></tr>
+                                               <tr><td colspan="4" style="border-bottom: 1px solid #30303065;"></td></tr>
                                            `).join('')}
                                        </tbody>
                                    </table>
@@ -694,7 +694,7 @@ const CreateOrderContent = () => {
                                                    <td class="item-name">${item.name}</td>
                                                    <td style="text-align: center;">${item.quantity}</td>
                                                </tr>
-                                               <tr><td colspan="2" style="border-bottom: 1px solid #000;"></td></tr>
+                                               <tr><td colspan="2" style="border-bottom: 1px dotted #202020ff;"></td></tr>
                                            `).join('')}
                                        </tbody>
                                    </table>
