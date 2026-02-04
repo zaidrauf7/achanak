@@ -181,7 +181,7 @@ export default function OrdersPage() {
                                     <th className="px-6 py-4">Type</th>
                                     <th className="px-6 py-4">Total</th>
                                     <th className="px-6 py-4 text-center">Status</th>
-                                    <th className="px-6 py-4 text-right">Actions</th>
+                                    {activeTab === 'active' && <th className="px-6 py-4 text-right">Actions</th>}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -239,34 +239,38 @@ export default function OrdersPage() {
                                                 {order.status}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <div className="flex items-center justify-end gap-2">
-                                                {order.status !== 'completed' && (
-                                                    <button 
-                                                        onClick={() => handleEdit(order)}
-                                                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-                                                    >
-                                                        <Edit2 size={14} /> Edit
-                                                    </button>
-                                                )}
-                                                
-                                                <button 
-                                                    onClick={() => handleDelete(order._id)}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
-                                                >
-                                                    <Trash2 size={14} /> Delete
-                                                </button>
-                                                
-                                                {order.status !== 'completed' && (
-                                                    <button 
-                                                        onClick={() => handleStatusUpdate(order._id, 'completed')}
-                                                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
-                                                    >
-                                                        <CheckCircle size={14} /> Complete
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </td>
+                                         {activeTab === 'active' && (
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    {order.status !== 'completed' && (
+                                                        <button 
+                                                            onClick={() => handleEdit(order)}
+                                                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                                                        >
+                                                            <Edit2 size={14} /> Edit
+                                                        </button>
+                                                    )}
+                                                    
+                                                    {order.status !== 'completed' && (
+                                                        <button 
+                                                            onClick={() => handleDelete(order._id)}
+                                                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                                                        >
+                                                            <Trash2 size={14} /> Delete
+                                                        </button>
+                                                    )}
+                                                    
+                                                    {order.status !== 'completed' && (
+                                                        <button 
+                                                            onClick={() => handleStatusUpdate(order._id, 'completed')}
+                                                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
+                                                        >
+                                                            <CheckCircle size={14} /> Complete
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        )}
                                     </tr>
                                 ))}
                             </tbody>
